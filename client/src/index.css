@@ -106,6 +106,24 @@
   --metric-gradient-negative: 0 84% 55%;
   --metric-gradient-neutral: 220 10% 88%;
 
+  /* Layout gradient colors */
+  --sidebar-gradient-start: 220 8% 96%;
+  --sidebar-gradient-end: 220 10% 94%;
+  --sidebar-logo-gradient-start: 210 100% 58%;
+  --sidebar-logo-gradient-end: 210 100% 45%;
+  --header-gradient-start: 0 0% 99%;
+  --header-gradient-end: 220 8% 96%;
+  --main-gradient-start: 0 0% 99%;
+  --main-gradient-end: 220 5% 97%;
+
+  /* Animation timing variables */
+  --animation-fast: 0.15s;
+  --animation-normal: 0.25s;
+  --animation-slow: 0.35s;
+  --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
   --font-sans: Inter, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -231,6 +249,16 @@
   --metric-gradient-positive: 142 76% 45%;
   --metric-gradient-negative: 0 84% 65%;
   --metric-gradient-neutral: 220 13% 20%;
+
+  /* Layout gradient colors for dark mode */
+  --sidebar-gradient-start: 220 18% 11%;
+  --sidebar-gradient-end: 220 15% 9%;
+  --sidebar-logo-gradient-start: 210 100% 58%;
+  --sidebar-logo-gradient-end: 210 100% 45%;
+  --header-gradient-start: 220 15% 9%;
+  --header-gradient-end: 220 18% 11%;
+  --main-gradient-start: 220 15% 8%;
+  --main-gradient-end: 220 12% 10%;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(220 15% 5% / 0.40);
   --shadow-xs: 0px 1px 2px 0px hsl(220 15% 5% / 0.40);
@@ -362,5 +390,136 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+
+  /* Custom layout animation utilities */
+  .animate-slide-in {
+    animation: slide-in var(--animation-normal) var(--ease-smooth) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fade-in var(--animation-normal) var(--ease-smooth) forwards;
+  }
+
+  .animate-scale-in {
+    animation: scale-in var(--animation-fast) var(--ease-spring) forwards;
+  }
+
+  .animate-rotate-scale {
+    animation: rotate-scale var(--animation-normal) var(--ease-bounce) forwards;
+  }
+
+  .backdrop-blur-sm {
+    backdrop-filter: blur(8px);
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(12px);
+  }
+
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-slide-in,
+    .animate-fade-in,
+    .animate-scale-in,
+    .animate-rotate-scale {
+      animation: none;
+    }
+    
+    * {
+      transition-duration: 0.01s !important;
+      animation-duration: 0.01s !important;
+    }
+  }
+
+  /* Layout gradient utilities */
+  .bg-sidebar-gradient {
+    background: linear-gradient(135deg, hsl(var(--sidebar-gradient-start)), hsl(var(--sidebar-gradient-end)));
+  }
+
+  .bg-header-gradient {
+    background: linear-gradient(135deg, hsl(var(--header-gradient-start)), hsl(var(--header-gradient-end)));
+  }
+
+  .bg-main-gradient {
+    background: linear-gradient(135deg, hsl(var(--main-gradient-start)), hsl(var(--main-gradient-end)));
+  }
+
+  .bg-logo-gradient {
+    background: linear-gradient(135deg, hsl(var(--sidebar-logo-gradient-start)), hsl(var(--sidebar-logo-gradient-end)));
+  }
+
+  /* Icon animations */
+  .icon-hover-rotate {
+    transition: transform var(--animation-fast) var(--ease-smooth);
+  }
+
+  .icon-hover-rotate:hover {
+    transform: rotate(5deg) scale(1.05);
+  }
+
+  .icon-hover-scale {
+    transition: transform var(--animation-fast) var(--ease-smooth);
+  }
+
+  .icon-hover-scale:hover {
+    transform: scale(1.1);
+  }
+
+  /* Scroll shadow effect */
+  .scroll-shadow {
+    transition: box-shadow var(--animation-normal) var(--ease-smooth);
+  }
+
+  .scroll-shadow[data-scrolled="true"] {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark .scroll-shadow[data-scrolled="true"] {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Keyframe animations */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rotate-scale {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
   }
 }
