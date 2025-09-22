@@ -2,9 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { alerts, email_notifications } from "../shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { alerts, email_notifications, client_time_series, forecast_predictions, clients } from "../shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 import { triggerDetectionService } from "./trigger-detection";
+import { forecastService } from "./forecast-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Analytics Routes
@@ -114,6 +115,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching email notifications:", error);
       res.status(500).json({ error: "Failed to fetch email notifications" });
+    }
+  });
+
+  // Forecast routes
+  app.get("/api/forecast/clients", async (req, res) => {
+    try {
+      const clientsList = await db.select({
+        client_id: clients.client_id,
+        primary_contact: clients.primary_contact,
+        region: clients.region,
+        industry: clients.industry
+      }).from(clients).orderBy(clients.client_id);
+      res.json(clientsList);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ error: "Failed to fetch clients" });
+    }
+  });
+
+  app.get("/api/forecast/:clientId/historical", async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const historicalData = await db.select()
+        .from(client_time_series)
+        .where(eq(client_time_series.client_id, clientId))
+        .orderBy(client_time_series.date);
+      
+      res.json(historicalData.map(d => ({
+        date: d.date.toISOString().split('T')[0],
+        sentiment_score: d.sentiment_score,
+        churn_probability: d.churn_probability,
+        satisfaction_score: d.satisfaction_score,
+        issue_count: d.issue_count,
+        escalation_count: d.escalation_count
+      })));
+    } catch (error) {
+      console.error("Error fetching historical data:", error);
+      res.status(500).json({ error: "Failed to fetch historical data" });
+    }
+  });
+
+  app.post("/api/forecast/:clientId/generate", async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const { type, periods } = req.body;
+      
+      if (!type || !['sentiment', 'churn'].includes(type)) {
+        return res.status(400).json({ error: "Invalid forecast type. Must be 'sentiment' or 'churn'" });
+      }
+
+      let forecast;
+      if (type === 'sentiment') {
+        forecast = await forecastService.generateSentimentForecast(clientId, periods || 6);
+      } else {
+        forecast = await forecastService.generateChurnForecast(clientId, periods || 2);
+      }
+
+      res.json(forecast);
+    } catch (error) {
+      console.error("Error generating forecast:", error);
+      res.status(500).json({ error: "Failed to generate forecast: " + error.message });
+    }
+  });
+
+  app.get("/api/forecast/:clientId/predictions", async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const { type } = req.query;
+      
+      if (!type || !['sentiment', 'churn_risk'].includes(type as string)) {
+        return res.status(400).json({ error: "Invalid forecast type. Must be 'sentiment' or 'churn_risk'" });
+      }
+
+      const predictions = await forecastService.getStoredForecasts(clientId, type as 'sentiment' | 'churn_risk');
+      res.json(predictions);
+    } catch (error) {
+      console.error("Error fetching predictions:", error);
+      res.status(500).json({ error: "Failed to fetch predictions" });
+    }
+  });
+
+  app.post("/api/forecast/sample-data", async (req, res) => {
+    try {
+      await forecastService.generateSampleData();
+      res.json({ message: "Sample data generated successfully" });
+    } catch (error) {
+      console.error("Error generating sample data:", error);
+      res.status(500).json({ error: "Failed to generate sample data" });
     }
   });
 
