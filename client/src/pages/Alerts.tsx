@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SkeletonAlert, SkeletonTable, SkeletonContainer, SkeletonPage } from '@/components/ui/skeletons';
 import { useToast } from '@/hooks/use-toast';
 
 interface Alert {
@@ -144,10 +145,15 @@ export default function Alerts() {
 
         <TabsContent value="active-alerts" className="space-y-6">
           {alertsLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-muted-foreground">Loading alerts...</p>
-            </div>
+            <SkeletonContainer className="space-y-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <SkeletonAlert
+                  key={index}
+                  severity={index === 0 ? 'critical' : index === 1 ? 'high' : index === 2 ? 'medium' : 'low'}
+                  showActions={true}
+                />
+              ))}
+            </SkeletonContainer>
           ) : pendingAlerts.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">

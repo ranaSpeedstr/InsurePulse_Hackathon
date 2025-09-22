@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SkeletonCard, SkeletonChart, SkeletonContainer, SkeletonPage, SkeletonWithShimmer } from '@/components/ui/skeletons';
 import { useToast } from '@/hooks/use-toast';
 
 interface Client {
@@ -225,26 +226,30 @@ export default function Forecast() {
       </div>
 
       {/* Client Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Client</CardTitle>
-          <CardDescription>Choose a client to view their forecast analytics</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Select value={selectedClient} onValueChange={setSelectedClient} data-testid="select-client">
-            <SelectTrigger className="w-full md:w-96">
-              <SelectValue placeholder="Select a client to analyze..." />
-            </SelectTrigger>
-            <SelectContent>
-              {clients.map((client) => (
-                <SelectItem key={client.client_id} value={client.client_id}>
-                  Client {client.client_id} - {client.primary_contact} ({client.region})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+      {clientsLoading ? (
+        <SkeletonCard showHeader={true} headerHeight={6} contentLines={2} className="w-full" />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Client</CardTitle>
+            <CardDescription>Choose a client to view their forecast analytics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedClient} onValueChange={setSelectedClient} data-testid="select-client">
+              <SelectTrigger className="w-full md:w-96">
+                <SelectValue placeholder="Select a client to analyze..." />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.map((client) => (
+                  <SelectItem key={client.client_id} value={client.client_id}>
+                    Client {client.client_id} - {client.primary_contact} ({client.region})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      )}
 
       {selectedClient && (
         <AnimatePresence>
@@ -254,18 +259,43 @@ export default function Forecast() {
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            {/* Forecast Charts */}
-            <Tabs defaultValue="sentiment" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="sentiment" data-testid="tab-sentiment">
-                  Sentiment Forecast
-                </TabsTrigger>
-                <TabsTrigger value="churn" data-testid="tab-churn">
-                  Churn Risk Forecast
-                </TabsTrigger>
-              </TabsList>
+            {/* Loading State for Forecast Data */}
+            {historicalLoading ? (
+              <SkeletonContainer className="space-y-6">
+                {/* Tabs Skeleton */}
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex gap-1 border-b mb-6">
+                      <SkeletonWithShimmer className="h-10 w-32 rounded-t" />
+                      <SkeletonWithShimmer className="h-10 w-36 rounded-t" />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Chart Skeletons */}
+                <SkeletonChart height={80} showLegend={true} />
+                <SkeletonChart height={80} showLegend={true} />
+                
+                {/* AI Insights Skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <SkeletonCard showHeader={true} contentLines={4} />
+                  <SkeletonCard showHeader={true} contentLines={4} />
+                </div>
+              </SkeletonContainer>
+            ) : (
+              <>
+                {/* Forecast Charts */}
+                <Tabs defaultValue="sentiment" className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="sentiment" data-testid="tab-sentiment">
+                      Sentiment Forecast
+                    </TabsTrigger>
+                    <TabsTrigger value="churn" data-testid="tab-churn">
+                      Churn Risk Forecast
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="sentiment" className="space-y-6">
+                  <TabsContent value="sentiment" className="space-y-6">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
@@ -607,6 +637,9 @@ export default function Forecast() {
                 </CardContent>
               </Card>
             )}
+            </>
+            )}
+
           </motion.div>
         </AnimatePresence>
       )}

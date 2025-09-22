@@ -3,7 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SkeletonCard, SkeletonTable, SkeletonContainer, SkeletonMetrics, SkeletonPage } from "@/components/ui/skeletons";
 import { User, Building, DollarSign, TrendingUp, MessageSquare, AlertTriangle, Users, Wrench, Target, CheckCircle2, Database, FileSpreadsheet, Mail, Phone, BarChart2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ClientProfile {
   id: string;
@@ -36,6 +38,7 @@ interface Client360ViewProps {
   profile: ClientProfile;
   feedback: FeedbackItem[];
   metrics: Metric[];
+  isLoading?: boolean;
 }
 
 const getSentimentColor = (sentiment: string) => {
@@ -71,9 +74,36 @@ const getRiskBadgeVariant = (risk: string) => {
   }
 };
 
-export default function Client360View({ profile, feedback, metrics }: Client360ViewProps) {
+export default function Client360View({ profile, feedback, metrics, isLoading = false }: Client360ViewProps) {
+  if (isLoading) {
+    return (
+      <SkeletonContainer className="space-y-6" data-testid="client-360-view-loading">
+        {/* Profile Header Skeleton */}
+        <SkeletonCard showHeader={false} contentHeight={32} />
+        
+        {/* Tabs Skeleton */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex gap-1 border-b mb-6">
+              <div className="h-10 w-32 bg-muted animate-pulse rounded-t" />
+              <div className="h-10 w-36 bg-muted/60 animate-pulse rounded-t" />
+              <div className="h-10 w-28 bg-muted/60 animate-pulse rounded-t" />
+            </div>
+            <SkeletonMetrics count={4} columns={4} />
+          </CardContent>
+        </Card>
+      </SkeletonContainer>
+    );
+  }
+
   return (
-    <div className="space-y-6" data-testid="client-360-view">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6" 
+      data-testid="client-360-view"
+    >
       {/* Profile Header */}
       <Card>
         <CardHeader>
@@ -446,6 +476,6 @@ export default function Client360View({ profile, feedback, metrics }: Client360V
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </motion.div>
   );
 }

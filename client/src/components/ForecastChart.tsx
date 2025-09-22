@@ -2,7 +2,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface ForecastData {
   month: string;
@@ -60,13 +61,14 @@ const LINE_CONFIGS = {
 // Loading skeleton for the chart
 function ForecastChartSkeleton({ type }: { type: "sentiment" | "churn" }) {
   const title = type === "sentiment" ? "Sentiment Forecast" : "Churn Risk Probability Trend";
+  const prefersReducedMotion = useReducedMotion();
   
   return (
     <Card className="relative overflow-hidden" data-testid={`card-forecast-${type}-skeleton`}>
       <motion.div
         className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
-        animate={{ x: ["0%", "100%"] }}
-        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+        animate={prefersReducedMotion ? {} : { x: ["0%", "100%"] }}
+        transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.5, ease: "linear" }}
       />
       <CardHeader>
         <Skeleton className="h-6 w-48 bg-gradient-to-r from-muted to-muted/60" />
@@ -124,7 +126,7 @@ function ForecastChartSkeleton({ type }: { type: "sentiment" | "churn" }) {
         </div>
         {/* Legend skeleton */}
         <div className="flex justify-center gap-6 mt-4">
-          {type === "sentiment" ? [1, 2, 3] : [1]}.map((i) => (
+          {(type === "sentiment" ? [1, 2, 3] : [1]).map((i) => (
             <div key={i} className="flex items-center gap-2">
               <Skeleton className="h-3 w-3 rounded-full bg-gradient-to-r from-muted to-muted/60" />
               <Skeleton className="h-4 w-16 bg-gradient-to-r from-muted to-muted/60" />
@@ -137,13 +139,15 @@ function ForecastChartSkeleton({ type }: { type: "sentiment" | "churn" }) {
 }
 
 // Enhanced legend with animations
-function AnimatedLegend({ payload, hoveredLine, onLineHover, onLineLeave }: any) {
+function AnimatedLegend({ payload, hoveredLine, onLineHover, onLineLeave, prefersReducedMotion }: any) {
   return (
     <motion.div 
       className="flex justify-center gap-6 mt-4"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.5 }}
+      transition={{ duration: prefersReducedMotion ? 0.01 : 0.5, delay: prefersReducedMotion ? 0 : 0.5 }}
+      role="list"
+      aria-label="Chart legend"
     >
       {payload?.map((entry: any, index: number) => {
         const isHovered = hoveredLine === entry.dataKey;
@@ -152,8 +156,16 @@ function AnimatedLegend({ payload, hoveredLine, onLineHover, onLineLeave }: any)
           <motion.div
             key={index}
             className="flex items-center gap-2 cursor-pointer select-none"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+            whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+            role="listitem"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onLineHover(entry.dataKey);
+              }
+            }}
             onMouseEnter={() => onLineHover(entry.dataKey)}
             onMouseLeave={onLineLeave}
             data-testid={`legend-${entry.dataKey}`}
@@ -168,7 +180,7 @@ function AnimatedLegend({ payload, hoveredLine, onLineHover, onLineLeave }: any)
                 scale: isHovered ? 1.2 : 1,
                 height: isHovered ? 6 : 2
               }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.2 }}
             />
             <motion.span
               className={`text-sm font-medium transition-colors duration-200 ${
@@ -190,6 +202,8 @@ function AnimatedLegend({ payload, hoveredLine, onLineHover, onLineLeave }: any)
 export default function ForecastChart({ data, type, isLoading = false }: ForecastChartProps) {
   const [hoveredLine, setHoveredLine] = useState<string | null>(null);
   const title = type === "sentiment" ? "Sentiment Forecast" : "Churn Risk Probability Trend";
+  const prefersReducedMotion = useReducedMotion();
+  const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
   if (isLoading) {
     return <ForecastChartSkeleton type={type} />;
@@ -206,7 +220,7 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: prefersReducedMotion ? 0.01 : 0.5, ease: "easeOut" }}
       >
         <Card 
           className="relative overflow-hidden group hover:shadow-xl transition-all duration-500 ease-out"
@@ -226,7 +240,7 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.5 }}
             >
               <CardTitle className="text-xl font-semibold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">
                 {title}
@@ -239,14 +253,19 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
               className="h-80"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.5, delay: prefersReducedMotion ? 0 : 0.2 }}
             >
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <LineChart 
+                  data={data} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  role="img"
+                  aria-label={`${title} showing ${data.length} data points over time`}
+                >
                   {/* Gradient definitions */}
                   <defs>
                     {Object.entries(lineConfigs).map(([key, config]) => (
-                      <linearGradient key={key} id={`gradient-${key}`} x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient key={key} id={`gradient-${key}-${instanceId}`} x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor={config.gradient.start} stopOpacity={0.8} />
                         <stop offset="100%" stopColor={config.gradient.end} stopOpacity={0.1} />
                       </linearGradient>
@@ -304,6 +323,7 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                         hoveredLine={hoveredLine}
                         onLineHover={handleLineHover}
                         onLineLeave={handleLineLeave}
+                        prefersReducedMotion={prefersReducedMotion}
                       />
                     )}
                   />
@@ -312,7 +332,7 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                     <motion.g
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.8, delay: 0.3 }}
+                      transition={{ duration: prefersReducedMotion ? 0.01 : 0.8, delay: prefersReducedMotion ? 0 : 0.3 }}
                     >
                       <Line 
                         type="monotone" 
@@ -333,8 +353,8 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                           strokeWidth: 2,
                           filter: `drop-shadow(0 0 8px ${lineConfigs.positive.glow})`
                         }}
-                        animationBegin={0}
-                        animationDuration={1500}
+                        animationBegin={prefersReducedMotion ? 0 : 0}
+                        animationDuration={prefersReducedMotion ? 0 : 1500}
                         animationEasing="ease-out"
                         onMouseEnter={() => handleLineHover("positive")}
                         onMouseLeave={handleLineLeave}
@@ -394,7 +414,7 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                     <motion.g
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.8, delay: 0.3 }}
+                      transition={{ duration: prefersReducedMotion ? 0.01 : 0.8, delay: prefersReducedMotion ? 0 : 0.3 }}
                     >
                       <Line 
                         type="monotone" 
@@ -415,8 +435,8 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                           strokeWidth: 3,
                           filter: `drop-shadow(0 0 10px ${lineConfigs.churnProbability.glow})`
                         }}
-                        animationBegin={0}
-                        animationDuration={1500}
+                        animationBegin={prefersReducedMotion ? 0 : 0}
+                        animationDuration={prefersReducedMotion ? 0 : 1500}
                         animationEasing="ease-out"
                         onMouseEnter={() => handleLineHover("churnProbability")}
                         onMouseLeave={handleLineLeave}
@@ -428,7 +448,7 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
             </motion.div>
 
             {/* Glow effect overlay for hovered line */}
-            {hoveredLine && (
+            {hoveredLine && !prefersReducedMotion && (
               <motion.div
                 className="absolute inset-0 pointer-events-none"
                 initial={{ opacity: 0 }}

@@ -2,7 +2,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 interface BenchmarkData {
   client: string;
@@ -45,12 +46,14 @@ const METRIC_CONFIGS = {
 
 // Loading skeleton for the chart
 function ClientBenchmarkingSkeleton() {
+  const prefersReducedMotion = useReducedMotion();
+  
   return (
     <Card className="relative overflow-hidden" data-testid="card-client-benchmarking-skeleton">
       <motion.div
         className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
-        animate={{ x: ["0%", "100%"] }}
-        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+        animate={prefersReducedMotion ? {} : { x: ["0%", "100%"] }}
+        transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.5, ease: "linear" }}
       />
       <CardHeader>
         <Skeleton className="h-6 w-40 bg-gradient-to-r from-muted to-muted/60" />
@@ -83,13 +86,15 @@ function ClientBenchmarkingSkeleton() {
 }
 
 // Enhanced legend with animations
-function AnimatedLegend({ payload, hoveredMetric, onMetricHover, onMetricLeave }: any) {
+function AnimatedLegend({ payload, hoveredMetric, onMetricHover, onMetricLeave, prefersReducedMotion }: any) {
   return (
     <motion.div 
       className="flex justify-center gap-6 mt-4"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.5 }}
+      transition={{ duration: prefersReducedMotion ? 0.01 : 0.5, delay: prefersReducedMotion ? 0 : 0.5 }}
+      role="list"
+      aria-label="Chart legend"
     >
       {payload?.map((entry: any, index: number) => {
         const isHovered = hoveredMetric === entry.dataKey;
@@ -99,8 +104,16 @@ function AnimatedLegend({ payload, hoveredMetric, onMetricHover, onMetricLeave }
           <motion.div
             key={index}
             className="flex items-center gap-2 cursor-pointer select-none"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={prefersReducedMotion ? {} : { scale: 1.05 }}
+            whileTap={prefersReducedMotion ? {} : { scale: 0.95 }}
+            role="listitem"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onMetricHover(entry.dataKey);
+              }
+            }}
             onMouseEnter={() => onMetricHover(entry.dataKey)}
             onMouseLeave={onMetricLeave}
             data-testid={`legend-${entry.dataKey}`}
@@ -115,7 +128,7 @@ function AnimatedLegend({ payload, hoveredMetric, onMetricHover, onMetricLeave }
                 scale: isHovered ? 1.2 : 1,
                 boxShadow: isHovered ? `0 0 12px ${metricConfig?.glow}` : '0 0 0px transparent'
               }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.2 }}
             />
             <motion.span
               className={`text-sm font-medium transition-colors duration-200 ${
@@ -135,13 +148,13 @@ function AnimatedLegend({ payload, hoveredMetric, onMetricHover, onMetricLeave }
 }
 
 // Custom Bar component with gradients
-function GradientBar({ dataKey, name, ...props }: any) {
+function GradientBar({ dataKey, name, instanceId, prefersReducedMotion, ...props }: any) {
   const metricConfig = METRIC_CONFIGS[dataKey as keyof typeof METRIC_CONFIGS];
   
   return (
     <>
       <defs>
-        <linearGradient id={`gradient-${dataKey}`} x1="0" y1="1" x2="0" y2="0">
+        <linearGradient id={`gradient-${dataKey}-${instanceId}`} x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%" stopColor={metricConfig?.gradient.end} />
           <stop offset="100%" stopColor={metricConfig?.gradient.start} />
         </linearGradient>
@@ -150,11 +163,13 @@ function GradientBar({ dataKey, name, ...props }: any) {
         {...props}
         dataKey={dataKey}
         name={name}
-        fill={`url(#gradient-${dataKey})`}
+        fill={`url(#gradient-${dataKey}-${instanceId})`}
         radius={[4, 4, 0, 0]}
         animationBegin={0}
-        animationDuration={800}
+        animationDuration={prefersReducedMotion ? 0 : 800}
         animationEasing="ease-out"
+        role="presentation"
+        aria-label={`${name} metric data`}
       />
     </>
   );
@@ -163,6 +178,8 @@ function GradientBar({ dataKey, name, ...props }: any) {
 export default function ClientBenchmarking({ data, isLoading = false }: ClientBenchmarkingProps) {
   const [hoveredMetric, setHoveredMetric] = useState<string | null>(null);
   const [hoveredClient, setHoveredClient] = useState<string | null>(null);
+  const prefersReducedMotion = useReducedMotion();
+  const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
   if (isLoading) {
     return <ClientBenchmarkingSkeleton />;
@@ -179,7 +196,7 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: prefersReducedMotion ? 0.01 : 0.5, ease: "easeOut" }}
       >
         <Card 
           className="relative overflow-hidden group hover:shadow-xl transition-all duration-500 ease-out"
@@ -199,7 +216,7 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.5 }}
             >
               <CardTitle className="text-xl font-semibold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">
                 Client Benchmarking
@@ -212,7 +229,7 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
               className="h-80"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.5, delay: prefersReducedMotion ? 0 : 0.2 }}
             >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
@@ -220,11 +237,13 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
                   margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   onMouseEnter={(data) => data?.activeLabel && handleClientHover(data.activeLabel)}
                   onMouseLeave={handleClientLeave}
+                  role="img"
+                  aria-label={`Client benchmarking chart comparing ${data.length} clients across multiple metrics`}
                 >
                   {/* Gradient definitions */}
                   <defs>
                     {Object.entries(METRIC_CONFIGS).map(([key, config]) => (
-                      <linearGradient key={key} id={`gradient-${key}`} x1="0" y1="1" x2="0" y2="0">
+                      <linearGradient key={key} id={`gradient-${key}-${instanceId}`} x1="0" y1="1" x2="0" y2="0">
                         <stop offset="0%" stopColor={config.gradient.end} />
                         <stop offset="100%" stopColor={config.gradient.start} />
                       </linearGradient>
@@ -279,6 +298,7 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
                         hoveredMetric={hoveredMetric}
                         onMetricHover={handleMetricHover}
                         onMetricLeave={handleMetricLeave}
+                        prefersReducedMotion={prefersReducedMotion}
                       />
                     )}
                   />
@@ -286,34 +306,40 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
                   <motion.g
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.3 }}
+                    transition={{ duration: prefersReducedMotion ? 0.01 : 0.8, delay: prefersReducedMotion ? 0 : 0.3 }}
                   >
                     <Bar 
                       dataKey="nps" 
-                      fill="url(#gradient-nps)" 
+                      fill={`url(#gradient-nps-${instanceId})`} 
                       name="NPS" 
                       radius={[4, 4, 0, 0]}
-                      animationBegin={100}
-                      animationDuration={800}
+                      animationBegin={prefersReducedMotion ? 0 : 100}
+                      animationDuration={prefersReducedMotion ? 0 : 800}
                       animationEasing="ease-out"
+                      role="presentation"
+                      aria-label="NPS scores by client"
                     />
                     <Bar 
                       dataKey="retention" 
-                      fill="url(#gradient-retention)" 
+                      fill={`url(#gradient-retention-${instanceId})`} 
                       name="Retention" 
                       radius={[4, 4, 0, 0]}
-                      animationBegin={200}
-                      animationDuration={800}
+                      animationBegin={prefersReducedMotion ? 0 : 200}
+                      animationDuration={prefersReducedMotion ? 0 : 800}
                       animationEasing="ease-out"
+                      role="presentation"
+                      aria-label="Retention rates by client"
                     />
                     <Bar 
                       dataKey="supportScore" 
-                      fill="url(#gradient-supportScore)" 
+                      fill={`url(#gradient-supportScore-${instanceId})`} 
                       name="Support Score" 
                       radius={[4, 4, 0, 0]}
-                      animationBegin={300}
-                      animationDuration={800}
+                      animationBegin={prefersReducedMotion ? 0 : 300}
+                      animationDuration={prefersReducedMotion ? 0 : 800}
                       animationEasing="ease-out"
+                      role="presentation"
+                      aria-label="Support scores by client"
                     />
                   </motion.g>
                 </BarChart>
@@ -321,7 +347,7 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
             </motion.div>
 
             {/* Glow effect overlay for hovered client */}
-            {hoveredClient && (
+            {hoveredClient && !prefersReducedMotion && (
               <motion.div
                 className="absolute inset-0 pointer-events-none"
                 initial={{ opacity: 0 }}
