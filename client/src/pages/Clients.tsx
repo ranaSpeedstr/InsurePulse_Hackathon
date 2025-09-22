@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import Client360View from "@/components/Client360View";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,7 +10,17 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Clients() {
   const [selectedClient, setSelectedClient] = useState("");
+  const [location] = useLocation();
   const { toast } = useToast();
+
+  // Check URL parameters for selected client
+  useEffect(() => {
+    const params = new URLSearchParams(location.split('?')[1] || '');
+    const selectedFromUrl = params.get('selected');
+    if (selectedFromUrl) {
+      setSelectedClient(selectedFromUrl);
+    }
+  }, [location]);
 
   // Fetch client profiles from assets
   const { data: clientProfiles = {}, isLoading: profilesLoading, refetch: refetchProfiles } = useQuery({
@@ -35,12 +46,14 @@ export default function Clients() {
     name: profile.name || `${profile.primaryContact} Company`
   }));
 
-  // Set default selected client when data loads
+  // Set default selected client when data loads (only if no client selected from URL)
   useEffect(() => {
-    if (clients.length > 0 && !selectedClient) {
+    const params = new URLSearchParams(location.split('?')[1] || '');
+    const selectedFromUrl = params.get('selected');
+    if (clients.length > 0 && !selectedClient && !selectedFromUrl) {
       setSelectedClient(clients[0].id);
     }
-  }, [clients, selectedClient]);
+  }, [clients, selectedClient, location]);
 
   // Transform metrics data to match component expectations
   const transformMetricsData = (rawMetrics: any) => {

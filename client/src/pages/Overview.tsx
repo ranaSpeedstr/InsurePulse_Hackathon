@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 import MetricCard from "@/components/MetricCard";
 import SentimentChart from "@/components/SentimentChart";
 import AtRiskClients from "@/components/AtRiskClients";
@@ -28,6 +29,13 @@ interface BenchmarkData {
 }
 
 export default function Overview() {
+  const [, setLocation] = useLocation();
+
+  const handleClientAction = (clientId: string, action: 'view') => {
+    if (action === 'view') {
+      setLocation(`/clients?selected=${clientId}`);
+    }
+  };
   // Fetch dashboard metrics from API
   const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
     queryKey: ['/api/dashboard/metrics'],
@@ -141,7 +149,10 @@ export default function Overview() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.7 }}
       >
-        <AtRiskClients clients={atRiskClientsData || []} />
+        <AtRiskClients 
+          clients={atRiskClientsData || []} 
+          onClientAction={handleClientAction}
+        />
       </motion.div>
     </motion.div>
   );
