@@ -533,7 +533,7 @@ class BackgroundJobProcessor {
       
       const numClusters = Math.min(3, Math.max(1, vectors.length)); // Ensure k >= 1
       const kmeansModule = await import('ml-kmeans');
-      const kmeans = kmeansModule.default ?? kmeansModule;
+      const kmeans = (kmeansModule.default ?? kmeansModule) as any;
       
       if (typeof kmeans !== 'function') {
         throw new Error('Failed to import kmeans function from ml-kmeans');
