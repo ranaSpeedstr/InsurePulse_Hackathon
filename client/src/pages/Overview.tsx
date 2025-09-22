@@ -20,6 +20,13 @@ interface AtRiskClient {
   healthScore: number;
 }
 
+interface BenchmarkData {
+  client: string;
+  nps: number;
+  retention: number;
+  supportScore: number;
+}
+
 export default function Overview() {
   // Fetch dashboard metrics from API
   const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
@@ -31,22 +38,20 @@ export default function Overview() {
     queryKey: ['/api/dashboard/at-risk-clients'],
   });
 
-  // Simulate loading for chart data (in real app, these would be API calls)
+  // Fetch benchmarking data from API
+  const { data: benchmarkingData, isLoading: benchmarkingLoading } = useQuery<BenchmarkData[]>({
+    queryKey: ['/api/dashboard/benchmarking'],
+  });
+
+  // Chart loading states
   const chartsLoading = metricsLoading;
+  const benchmarkingChartsLoading = benchmarkingLoading;
 
   // Mock data for charts (TODO: implement API endpoints for these)
   const sentimentData = [
     { name: "Positive", value: 55, color: "hsl(var(--chart-2))" },
     { name: "Neutral", value: 30, color: "hsl(var(--chart-3))" },
     { name: "Negative", value: 15, color: "hsl(var(--chart-4))" }
-  ];
-
-  const benchmarkingData = [
-    { client: "Client A", nps: 45, retention: 80, supportScore: 75 },
-    { client: "Client B", nps: 40, retention: 75, supportScore: 70 },
-    { client: "Client C", nps: 55, retention: 85, supportScore: 80 },
-    { client: "Client D", nps: 35, retention: 70, supportScore: 65 },
-    { client: "Client E", nps: 65, retention: 90, supportScore: 85 }
   ];
 
   return (
@@ -126,7 +131,7 @@ export default function Overview() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <ClientBenchmarking data={benchmarkingData} isLoading={chartsLoading} />
+          <ClientBenchmarking data={benchmarkingData || []} isLoading={benchmarkingChartsLoading} />
         </motion.div>
       </motion.div>
 

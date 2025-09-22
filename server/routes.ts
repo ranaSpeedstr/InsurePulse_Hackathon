@@ -30,6 +30,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/dashboard/benchmarking", async (req, res) => {
+    try {
+      const benchmarkingData = await storage.getClientBenchmarkingData();
+      res.json(benchmarkingData);
+    } catch (error) {
+      console.error("Error fetching benchmarking data:", error);
+      res.status(500).json({ error: "Failed to fetch benchmarking data" });
+    }
+  });
+
   // Client routes
   app.get("/api/clients", async (req, res) => {
     try {

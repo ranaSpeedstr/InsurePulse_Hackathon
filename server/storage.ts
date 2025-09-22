@@ -47,6 +47,14 @@ export interface IStorage {
     industry: string;
     healthScore: number;
   }>>;
+  
+  // Client benchmarking methods
+  getClientBenchmarkingData(): Promise<Array<{
+    client: string;
+    nps: number;
+    retention: number;
+    supportScore: number;
+  }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -192,6 +200,33 @@ export class DatabaseStorage implements IStorage {
       riskScore: client.riskScore || 0,
       industry: client.industry,
       healthScore: client.healthScore
+    }));
+  }
+
+  async getClientBenchmarkingData(): Promise<Array<{
+    client: string;
+    nps: number;
+    retention: number;
+    supportScore: number;
+  }>> {
+    const benchmarkingClients = await db
+      .select({
+        clientId: clients.client_id,
+        primaryContact: clients.primary_contact,
+        healthScore: clients.health_score,
+        renewalRate: client_retention.renewal_rate_percent,
+        supportScore: client_metrics.support_score
+      })
+      .from(clients)
+      .leftJoin(client_metrics, eq(clients.client_id, client_metrics.client_id))
+      .leftJoin(client_retention, eq(clients.client_id, client_retention.client_id))
+      .orderBy(clients.client_id);
+    
+    return benchmarkingClients.map(client => ({
+      client: client.clientId, // Using client_id as the identifier
+      nps: Math.round(client.healthScore * 10) || 0, // Map health_score to nps, scale it up and round
+      retention: client.renewalRate || 0, // Map renewal_rate_percent to retention
+      supportScore: client.supportScore || 0 // Map support_score directly
     }));
   }
 }
