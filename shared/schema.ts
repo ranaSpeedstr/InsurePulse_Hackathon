@@ -123,6 +123,35 @@ export const insertClientRetentionSchema = createInsertSchema(client_retention).
   created_at: true,
 });
 
+// Alerts and notifications tables for smart trigger system
+export const alerts = pgTable("alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  client_id: varchar("client_id").notNull().references(() => clients.client_id),
+  client_name: text("client_name").notNull(),
+  client_email: text("client_email").notNull(),
+  trigger_type: text("trigger_type").notNull(), // "NPS_DROP", "HIGH_CHURN_RISK", "NEGATIVE_FEEDBACK", etc.
+  trigger_description: text("trigger_description").notNull(),
+  severity: text("severity").notNull().default("Medium"), // "Low", "Medium", "High", "Critical"
+  status: text("status").notNull().default("Pending"), // "Pending", "Acknowledged", "Resolved"
+  detected_at: timestamp("detected_at").defaultNow(),
+  resolved_at: timestamp("resolved_at"),
+  openai_analysis: text("openai_analysis"), // Store full OpenAI analysis
+  csv_data_snapshot: text("csv_data_snapshot"), // Store relevant CSV data when trigger was created
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+export const email_notifications = pgTable("email_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  alert_id: varchar("alert_id").notNull().references(() => alerts.id),
+  subject: text("subject").notNull(),
+  recipient_email: text("recipient_email").notNull(),
+  sender_email: text("sender_email").notNull().default("csdinsure@gmail.com"),
+  email_body: text("email_body").notNull(),
+  status: text("status").notNull().default("Sent"), // "Sent", "Failed", "Pending"
+  sent_at: timestamp("sent_at").defaultNow(),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
 export const insertEmailSchema = createInsertSchema(emails).omit({
   id: true,
   created_at: true,
@@ -135,7 +164,16 @@ export const insertSentimentAnalysisSchema = createInsertSchema(sentiment_analys
 
 export const insertFileProcessingSchema = createInsertSchema(file_processing).omit({
   id: true,
-  processed_at: true,
+});
+
+export const insertAlertSchema = createInsertSchema(alerts).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertEmailNotificationSchema = createInsertSchema(email_notifications).omit({
+  id: true,
+  created_at: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -154,3 +192,7 @@ export type InsertSentimentAnalysis = z.infer<typeof insertSentimentAnalysisSche
 export type SentimentAnalysis = typeof sentiment_analysis.$inferSelect;
 export type InsertFileProcessing = z.infer<typeof insertFileProcessingSchema>;
 export type FileProcessing = typeof file_processing.$inferSelect;
+export type InsertAlert = z.infer<typeof insertAlertSchema>;
+export type Alert = typeof alerts.$inferSelect;
+export type InsertEmailNotification = z.infer<typeof insertEmailNotificationSchema>;
+export type EmailNotification = typeof email_notifications.$inferSelect;
