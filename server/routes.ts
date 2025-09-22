@@ -83,16 +83,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`[Routes] Generating insights for client ${clientId}${forceRefresh ? ' (force refresh)' : ''}`);
       
-      // Set a timeout for the entire request (30 seconds)
+      // Set a timeout for the entire request (30 seconds) with proper cleanup
+      let timeoutId: NodeJS.Timeout;
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout - insights generation took too long')), 30000);
+        timeoutId = setTimeout(() => reject(new Error('Request timeout - insights generation took too long')), 30000);
       });
       
       // Race between the actual insights generation and timeout
       const insightsPromise = clientInsightsService.generateClientInsights(clientId, forceRefresh);
-      const insights = await Promise.race([insightsPromise, timeoutPromise]);
       
-      res.json(insights);
+      try {
+        const insights = await Promise.race([insightsPromise, timeoutPromise]);
+        clearTimeout(timeoutId); // Clean up timeout on success
+        res.json(insights);
+      } catch (error) {
+        clearTimeout(timeoutId); // Clean up timeout on failure
+        throw error;
+      }
     } catch (error) {
       console.error(`[Routes] Error generating client insights for ${clientId}:`, error);
       
