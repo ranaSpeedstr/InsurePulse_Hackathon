@@ -187,9 +187,7 @@ class BackgroundJobProcessor {
 
   private async fetchEmails() {
     const emailAccounts = [
-      { email: 'csdinsure@gmail.com', password: process.env.GMAIL_APP_PASSWORD },
-      { email: 'a.clientinsure@gmail.com', password: process.env.GMAIL_APP_PASSWORD_A || process.env.GMAIL_APP_PASSWORD },
-      { email: 'b.clientinsure@gmail.com', password: process.env.GMAIL_APP_PASSWORD_B || process.env.GMAIL_APP_PASSWORD }
+      { email: 'csdinsure@gmail.com', password: process.env.GMAIL_APP_PASSWORD }
     ];
 
     for (const account of emailAccounts) {

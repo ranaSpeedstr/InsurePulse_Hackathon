@@ -1,0 +1,85 @@
+Build a web application dashboard for managing client alerts and email notifications. 
+Use the image (alert.png) as UI mock up and csv file (client_metrics_final.csv) as data source and keep it in a directory of the application.
+The app should have two main sections:
+
+1. Active Client Alerts Table
+
+Columns:
+
+Client (company name + user icon).
+
+Trigger (short description, e.g., “NPS Score Drop (15%)”).
+
+Date (alert date, use calendar/clock icon).
+
+Status (Pending / Resolved).
+
+Action (button: “Acknowledge / Resolve”).
+
+Functionality:
+
+From client_metrics_final.csv file, use OpenAI (api key would be passed in the secret key) to smartly create triggers if for any client any parameter in csv is critical or concerning for my company CSD team.
+
+When ever i change anything in csv file, app should be know it and then again run it against openai and verify if the data changed is a concerning trigger or not.
+
+These triggers should be stored in a JSON file associated with client id and client email.
+
+User can click Acknowledge / Resolve to update status. What ever options user clicks on, this will send an  email to client email from secret key CSD email (default - csdinsure@gmail.com) and use App password from secret keys.
+
+Status change should reflect immediately (e.g., “Pending → Resolved”). Update the status in json as well.
+
+Use Tailwind CSS for clean styling.
+
+Display icons for trigger & client (use Lucide-react icons).
+
+2. Email Notification Log
+
+Columns:
+
+Notification Subject (e.g., “NPS Drop Alert: Acme Corp”).
+
+Recipient Email, To: (as client email id)
+
+Timestamp (date + time).
+
+Functionality:
+
+Each time an alert is acknowledged/resolved → auto-generate an email notification entry in this log.
+
+Log should appear in descending timestamp order.
+
+Store logs in same JSON.
+
+3. General Requirements
+
+Use React + Tailwind CSS for frontend.
+
+Use Node.js/Express (or Flask if in Python) for backend mock API.
+
+Host on Replit with live preview.
+
+Provide sample seed data:
+
+{
+  "alerts": [
+    { "id": 1, "client": "Acme Corp", "trigger": "NPS Score Drop (15%)", "date": "2024-03-10", "status": "Pending" },
+    { "id": 2, "client": "Globex Inc.", "trigger": "Increased Negative Feedback", "date": "2024-03-09", "status": "Pending" },
+    { "id": 3, "client": "Initech Solutions", "trigger": "High Churn Probability (75%)", "date": "2024-03-08", "status": "Resolved" }
+  ],
+  "notifications": [
+    { "id": 1, "subject": "NPS Drop Alert: Client A", "recipient": "a.clientinsure@gmail.com", "timestamp": "2024-03-10T10:30:00" }
+  ]
+}
+
+
+Use Framer Motion for smooth button animations (when acknowledging/resolving alerts).
+
+Make sure UI matches a modern SaaS dashboard look.
+
+⚡ Expected Flow:
+
+Page loads → show list of active alerts + notification log.
+
+User clicks “Acknowledge / Resolve”.
+
+Status updates + new entry is added in Email Notification Log.
