@@ -3,10 +3,10 @@
     <Client>B</Client>
     <Primary_Contact>Brian Smith</Primary_Contact>
     <Region>West</Region>
-    <Industry>P&C Insurance</Industry>
+    <Industry>P&amp;C Insurance</Industry>
     <Contract_Status>Ending Soon</Contract_Status>
     <Annual_Spend_USD>150000</Annual_Spend_USD>
     <Health_Score>4.5</Health_Score>
     <Risk_Flag>High</Risk_Flag>
-	<Client_email>b.clientinsure@gmail.com</Client_email>
+        <Client_email>b.clientinsure@gmail.com</Client_email>
 </ClientProfile>
