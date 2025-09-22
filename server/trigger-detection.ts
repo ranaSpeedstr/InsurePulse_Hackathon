@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import OpenAI from 'openai';
+import nodemailer from 'nodemailer';
 import { db } from './db';
 import { alerts, clients, client_metrics, client_retention, email_notifications } from '../shared/schema';
 import { eq, and } from 'drizzle-orm';
@@ -272,20 +273,57 @@ If you have any questions or concerns, please don't hesitate to reach out to us.
 Best regards,
 CSD Team`;
 
+    let emailStatus = 'Failed';
+    let errorMessage = '';
+
     try {
+      // Actually send the email via Gmail SMTP
+      await this.sendActualEmail(alert.client_email, subject, emailBody);
+      emailStatus = 'Sent';
+      console.log(`[TriggerDetection] Email sent successfully to ${alert.client_email}`);
+    } catch (error) {
+      console.error('[TriggerDetection] Error sending email:', error);
+      errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      emailStatus = 'Failed';
+    }
+
+    try {
+      // Log the email notification to database
       await db.insert(email_notifications).values({
         alert_id: alert.id,
         subject: subject,
         recipient_email: alert.client_email,
         sender_email: 'csdinsure@gmail.com',
         email_body: emailBody,
-        status: 'Sent'
+        status: emailStatus
       });
 
-      console.log(`[TriggerDetection] Email notification logged for ${alert.client_email}`);
+      console.log(`[TriggerDetection] Email notification logged for ${alert.client_email} with status: ${emailStatus}`);
     } catch (error) {
       console.error('[TriggerDetection] Error logging email notification:', error);
     }
+  }
+
+  private async sendActualEmail(to: string, subject: string, body: string): Promise<void> {
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: 'csdinsure@gmail.com',
+        pass: process.env.GMAIL_APP_PASSWORD
+      }
+    });
+
+    const mailOptions = {
+      from: '"CSD Team" <csdinsure@gmail.com>',
+      to: to,
+      subject: subject,
+      text: body,
+      html: body.replace(/\n/g, '<br>')
+    };
+
+    await transporter.sendMail(mailOptions);
   }
 }
 
