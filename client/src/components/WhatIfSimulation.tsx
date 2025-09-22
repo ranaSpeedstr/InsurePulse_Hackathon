@@ -194,7 +194,7 @@ export default function WhatIfSimulation({ onSimulate, selectedClientId, clientP
     if (clientProfile && clientMetrics) {
       // Use actual client data to calculate current state
       const currentParams = {
-        responseTime: clientMetrics.avgResponseDays ? clientMetrics.avgResponseDays * 24 : 48,
+        responseTime: clientMetrics.avgResponseDays ? clientMetrics.avgResponseDays * 24 : 24,
         supportScore: clientMetrics.supportScore || 75,
         escalationRate: clientMetrics.escalations ? Math.min(50, clientMetrics.escalations * 2) : 15,
         communicationFreq: 2,
