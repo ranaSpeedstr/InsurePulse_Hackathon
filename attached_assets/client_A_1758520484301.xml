@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ClientProfile>
     <Client>A</Client>
-    <Primary_Contact>Alice Johnson</Primary_Contact>
     <Region>East</Region>
-    <Industry>Retail</Industry>
+    <Industry>WC Insurance</Industry>
     <Contract_Status>Renewed</Contract_Status>
     <Annual_Spend_USD>200000</Annual_Spend_USD>
     <Health_Score>9.0</Health_Score>

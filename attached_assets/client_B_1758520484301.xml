@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ClientProfile>
     <Client>B</Client>
-    <Primary_Contact>Brian Smith</Primary_Contact>
     <Region>West</Region>
-    <Industry>Finance</Industry>
+    <Industry>P&C Insurance</Industry>
     <Contract_Status>Ending Soon</Contract_Status>
     <Annual_Spend_USD>150000</Annual_Spend_USD>
     <Health_Score>4.5</Health_Score>
