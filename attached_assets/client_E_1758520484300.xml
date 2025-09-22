@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClientProfile>
+    <Client>E</Client>
+    <Primary_Contact>Evelyn Green</Primary_Contact>
+    <Region>Central</Region>
+    <Industry>Tech</Industry>
+    <Contract_Status>Renewed</Contract_Status>
+    <Annual_Spend_USD>250000</Annual_Spend_USD>
+    <Health_Score>8.5</Health_Score>
+    <Risk_Flag>Low</Risk_Flag>
+	<Client_email></Client_email>
+</ClientProfile>

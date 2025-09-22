@@ -1,0 +1,13 @@
+Client A: Hi team, I just wanted to thank you for the recent enhancements — they went live smoothly.
+CSD: Happy to hear that. Any immediate feedback from users?
+Client A: Users love the new dashboard; it’s reduced our manual work by half.
+CSD: Excellent. Anything we should prepare for next quarter?
+Client A: Yes — automation for renewals would save us a lot of time.
+--- SCENARIO END ---
+Client A: One odd issue: one of the reports is slower after the update and times out intermittently.
+CSD: That shouldn't happen. We'll investigate and patch it within this sprint.
+Client A: Please prioritize it; our operations rely on that report during month-end.
+--- SCENARIO END ---
+Client A: Also, shoutout to your devs — they handled a last-minute change perfectly last week.
+CSD: We’ll pass that on — thanks for the appreciation!
+Client A: We'll likely expand scope next year given this responsiveness.

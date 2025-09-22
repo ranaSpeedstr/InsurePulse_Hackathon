@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClientProfile>
+    <Client>D</Client>
+    <Primary_Contact>David Brown</Primary_Contact>
+    <Region>North</Region>
+    <Industry>Manufacturing</Industry>
+    <Contract_Status>Ending Soon</Contract_Status>
+    <Annual_Spend_USD>120000</Annual_Spend_USD>
+    <Health_Score>3.5</Health_Score>
+    <Risk_Flag>High</Risk_Flag>
+	<Client_email></Client_email>
+</ClientProfile>

@@ -1,0 +1,10 @@
+Client E: Great work! The reporting module has improved our analytics significantly.
+CSD: Thank you — glad it’s making an impact.
+Client E: Fast turnaround on the bug fix last week was impressive.
+CSD: We aim to keep response times low.
+--- SCENARIO END ---
+Client E: Leadership is impressed with proactive communication from your CSD.
+CSD: We value that feedback — we'll keep the cadence and documentation.
+--- SCENARIO END ---
+Client E: We're exploring AI-based modules in partnership; expect new scope next year.
+CSD: Exciting — we'll prepare capabilities and proposals for your team.

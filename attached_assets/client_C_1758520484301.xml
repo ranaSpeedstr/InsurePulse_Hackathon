@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ClientProfile>
+    <Client>C</Client>
+    <Primary_Contact>Carol White</Primary_Contact>
+    <Region>South</Region>
+    <Industry>Healthcare</Industry>
+    <Contract_Status>Active</Contract_Status>
+    <Annual_Spend_USD>180000</Annual_Spend_USD>
+    <Health_Score>6.0</Health_Score>
+    <Risk_Flag>Medium</Risk_Flag>
+	<Client_email></Client_email>
+</ClientProfile>

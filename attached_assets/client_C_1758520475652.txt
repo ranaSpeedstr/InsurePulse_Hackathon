@@ -1,0 +1,9 @@
+Client C: Thanks — last month's rollout went well and operations are pleased.
+CSD: Great to hear. Any lingering concerns?
+Client C: One manager noted response times were slower during peak hours.
+CSD: We'll allocate extra support during peak to improve response times.
+--- SCENARIO END ---
+Client C: We're planning automation projects and want to roadmap them with you.
+CSD: Let's schedule a planning session to align priorities and timelines.
+--- SCENARIO END ---
+Client C: Small note: one minor defect appeared but it was fixed within SLA. Appreciated.

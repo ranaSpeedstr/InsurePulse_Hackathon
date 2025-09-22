@@ -1,0 +1,31 @@
+I want to build a modern UI web app for Client Sentiment & Churn Reduction Dashboard (POC) . – Use the provided UI image to design UI.
+The app should integrate multiple client feedback sources and provide real-time insights for reducing churn.
+🔑 Requirements & Use Cases
+Data Sources (all should be automatically ingested, analyzed, and stored in a SQL table):
+1.	Emails (IMAP Gmail integration)
+o	Fetch client feedback emails (dummy: csdinsure@gmail.com with clients a.clientinsure@gmail.com, b.clientinsure@gmail.com, etc.)
+o	Run sentiment analysis (using HuggingFace / OpenAI free API).
+o	Store results in ClientFeedback table.
+2.	Call Conversation Text Files (/data/calls/)
+o	Each client (A–E) has a .txt file containing multiple conversation scenarios separated by a delimiter (====).
+o	Parse file, split by scenario, run sentiment + root cause extraction, and store each scenario as a row in DB.
+3.	Excel File (/data/excel/)
+Use the attached excel sheet and create the schema accordingly from the given path below:
+
+4.	XML Client Profiles (/data/xml/ClientA.xml … ClientE.xml)
+o	Profile fields: ClientID, Name, Industry, Contract Start/End, Annual Spend, Primary Contact, Health Score, Risk Flag, client_email.
+o	Parse and store in Client Profiles table.
+
+
+
+
+Dashboard Features
+1.	Sentiment Distribution – Pie/Bar chart (Positive, Neutral, Negative).
+2.	At-Risk Clients – List clients with multiple negative entries.
+3.	Top 3 Root Causes – Auto-cluster dissatisfaction drivers from conversations/emails.
+4.	Churn List – Flag high-risk clients based on multiple data points (emails + calls + metrics).
+5.	Client 360° View – Combined view of Email + Call + Excel + XML data for each client.
+6.	Early Warning Alerts – If new negative sentiment or churn risk detected → auto email alert to csdinsure@gmail.com.
+7.	Benchmarking & Heatmaps – Compare across clients (issues, turnaround time, escalations).
+8.	What-If Simulation (GenAI) – Ask “What if we improve turnaround time by 30%?” → use GenAI to simulate churn risk change.
+9.	Sentiment Forecasting – Simple time-series trend prediction of sentiment.

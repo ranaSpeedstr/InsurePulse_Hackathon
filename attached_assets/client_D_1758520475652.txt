@@ -1,0 +1,11 @@
+Client D: I'm concerned — we still have seven pending enhancements from last quarter.
+CSD: We acknowledge that backlog; resource constraints caused delays.
+Client D: Our leadership is pressuring us for delivery dates.
+CSD: We'll commit to clearing top priority items in two sprints.
+--- SCENARIO END ---
+Client D: Also, three new issues were reported last week and none are fixed.
+CSD: Those are assigned to the sprint, but I know that doesn't help today.
+Client D: If backlog and issues keep piling, leadership may look for other vendors.
+--- SCENARIO END ---
+Client D: We need more transparent status updates and realistic roadmaps.
+CSD: Understood — we'll provide weekly progress dashboards moving forward.

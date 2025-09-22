@@ -1,0 +1,12 @@
+Client B: I'm really frustrated. The last release introduced five critical bugs that impacted production.
+CSD: We're deeply sorry — we've opened hotfix branches and are patching them now.
+Client B: This is the third release with major regressions. Management is furious.
+CSD: We understand; we're escalating to the engineering lead and will provide daily updates.
+Client B: If this continues, we will consider contract termination at year-end.
+--- SCENARIO END ---
+Client B: Besides bugs, we had three escalations last month with no timely resolution.
+CSD: We're improving our escalation process and adding senior support during remediation.
+Client B: We expect immediate improvements — otherwise renewal is doubtful.
+--- SCENARIO END ---
+Client B: On a positive note, the new claims module did speed up a few workflows.
+CSD: Glad that module helped; we want to replicate that success across modules.
