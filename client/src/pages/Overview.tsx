@@ -1,21 +1,40 @@
+import { useQuery } from "@tanstack/react-query";
 import MetricCard from "@/components/MetricCard";
 import SentimentChart from "@/components/SentimentChart";
 import AtRiskClients from "@/components/AtRiskClients";
 import ClientBenchmarking from "@/components/ClientBenchmarking";
 
+interface DashboardMetrics {
+  totalClients: number;
+  atRiskClients: number;
+  avgRiskScore: number;
+  churnRate: number;
+}
+
+interface AtRiskClient {
+  id: string;
+  name: string;
+  riskScore: number;
+  industry: string;
+  healthScore: number;
+}
+
 export default function Overview() {
-  // TODO: remove mock data when integrating with real backend
+  // Fetch dashboard metrics from API
+  const { data: metrics, isLoading: metricsLoading } = useQuery<DashboardMetrics>({
+    queryKey: ['/api/dashboard/metrics'],
+  });
+
+  // Fetch at-risk clients from API
+  const { data: atRiskClientsData, isLoading: clientsLoading } = useQuery<AtRiskClient[]>({
+    queryKey: ['/api/dashboard/at-risk-clients'],
+  });
+
+  // Mock data for charts (TODO: implement API endpoints for these)
   const sentimentData = [
     { name: "Positive", value: 55, color: "hsl(var(--chart-2))" },
     { name: "Neutral", value: 30, color: "hsl(var(--chart-3))" },
     { name: "Negative", value: 15, color: "hsl(var(--chart-4))" }
-  ];
-
-  const atRiskClients = [
-    { id: "A", name: "Acme Corp", riskScore: 88, industry: "Technology", healthScore: 3.2 },
-    { id: "B", name: "Globex Inc.", riskScore: 76, industry: "Finance", healthScore: 4.1 },
-    { id: "C", name: "Initech Solutions", riskScore: 72, industry: "Healthcare", healthScore: 4.8 },
-    { id: "D", name: "Cyberdyne Systems", riskScore: 65, industry: "Manufacturing", healthScore: 5.5 }
   ];
 
   const benchmarkingData = [
@@ -37,30 +56,30 @@ export default function Overview() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <MetricCard 
           title="Total Clients" 
-          value="247" 
-          change={12} 
-          trend="up" 
-          subtitle="vs last month" 
+          value={metricsLoading ? "..." : metrics?.totalClients.toString() || "0"} 
+          change={0} 
+          trend="neutral" 
+          subtitle="current total" 
         />
         <MetricCard 
           title="At Risk Clients" 
-          value="18" 
-          change={-5} 
-          trend="down" 
-          subtitle="improved this month" 
+          value={metricsLoading ? "..." : metrics?.atRiskClients.toString() || "0"} 
+          change={0} 
+          trend={metrics?.atRiskClients && metrics.atRiskClients > 3 ? "up" : "down"} 
+          subtitle="need attention" 
         />
         <MetricCard 
-          title="Avg NPS Score" 
-          value="8.2" 
-          change={3} 
-          trend="up" 
-          subtitle="out of 10" 
+          title="Avg Risk Score" 
+          value={metricsLoading ? "..." : metrics?.avgRiskScore.toString() || "0"} 
+          change={0} 
+          trend={metrics?.avgRiskScore && metrics.avgRiskScore > 75 ? "up" : "down"} 
+          subtitle="risk assessment" 
         />
         <MetricCard 
           title="Churn Rate" 
-          value="2.4%" 
-          trend="neutral" 
-          subtitle="stable" 
+          value={metricsLoading ? "..." : `${metrics?.churnRate || 0}%`} 
+          trend={metrics?.churnRate && metrics.churnRate > 20 ? "up" : "down"} 
+          subtitle="retention metric" 
         />
       </div>
 
@@ -71,7 +90,7 @@ export default function Overview() {
       </div>
 
       {/* At-Risk Clients */}
-      <AtRiskClients clients={atRiskClients} />
+      <AtRiskClients clients={atRiskClientsData || []} />
     </div>
   );
 }

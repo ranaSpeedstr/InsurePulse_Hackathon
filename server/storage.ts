@@ -5,7 +5,7 @@ import {
   type ClientRetention, type InsertClientRetention
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -32,6 +32,21 @@ export interface IStorage {
   // Client retention methods
   createClientRetention(retention: InsertClientRetention): Promise<ClientRetention | undefined>;
   getClientRetention(clientId: string): Promise<ClientRetention | undefined>;
+  
+  // Dashboard analytics methods
+  getDashboardMetrics(): Promise<{
+    totalClients: number;
+    atRiskClients: number;
+    avgRiskScore: number;
+    churnRate: number;
+  }>;
+  getAtRiskClientsList(): Promise<Array<{
+    id: string;
+    name: string;
+    riskScore: number;
+    industry: string;
+    healthScore: number;
+  }>>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -115,6 +130,69 @@ export class DatabaseStorage implements IStorage {
   async getClientRetention(clientId: string): Promise<ClientRetention | undefined> {
     const [retention] = await db.select().from(client_retention).where(eq(client_retention.client_id, clientId));
     return retention || undefined;
+  }
+  
+  // Dashboard analytics methods
+  async getDashboardMetrics(): Promise<{
+    totalClients: number;
+    atRiskClients: number;
+    avgRiskScore: number;
+    churnRate: number;
+  }> {
+    // Get total clients count
+    const totalClientsResult = await db.select({ count: sql<number>`count(*)` }).from(clients);
+    const totalClients = totalClientsResult[0]?.count || 0;
+    
+    // Get at-risk clients count (risk_flag = 'High' or health_score < 5)
+    const atRiskResult = await db.select({ count: sql<number>`count(*)` })
+      .from(clients)
+      .where(sql`risk_flag = 'High' OR health_score < 5`);
+    const atRiskClients = atRiskResult[0]?.count || 0;
+    
+    // Get average risk score from client_retention table
+    const avgRiskResult = await db.select({ avg: sql<number>`avg(risk_score)` }).from(client_retention);
+    const avgRiskScore = Number(avgRiskResult[0]?.avg) || 0;
+    
+    // Calculate churn rate (100 - average renewal rate)
+    const avgRenewalResult = await db.select({ avg: sql<number>`avg(renewal_rate_percent)` }).from(client_retention);
+    const avgRenewalRate = Number(avgRenewalResult[0]?.avg) || 0;
+    const churnRate = Math.max(0, 100 - avgRenewalRate);
+    
+    return {
+      totalClients,
+      atRiskClients,
+      avgRiskScore: Math.round(avgRiskScore * 10) / 10, // Round to 1 decimal
+      churnRate: Math.round(churnRate * 10) / 10 // Round to 1 decimal
+    };
+  }
+
+  async getAtRiskClientsList(): Promise<Array<{
+    id: string;
+    name: string;
+    riskScore: number;
+    industry: string;
+    healthScore: number;
+  }>> {
+    const atRiskClients = await db
+      .select({
+        id: clients.client_id,
+        name: clients.primary_contact,
+        industry: clients.industry,
+        healthScore: clients.health_score,
+        riskScore: client_retention.risk_score
+      })
+      .from(clients)
+      .leftJoin(client_retention, eq(clients.client_id, client_retention.client_id))
+      .where(sql`clients.risk_flag = 'High' OR clients.health_score < 5`)
+      .orderBy(sql`client_retention.risk_score DESC`);
+    
+    return atRiskClients.map(client => ({
+      id: client.id,
+      name: client.name,
+      riskScore: client.riskScore || 0,
+      industry: client.industry,
+      healthScore: client.healthScore
+    }));
   }
 }
 
