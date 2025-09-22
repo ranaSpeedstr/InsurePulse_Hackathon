@@ -56,6 +56,11 @@ export default function Forecast() {
   // Fetch historical data for selected client
   const { data: historicalData = [], isLoading: historicalLoading, refetch: refetchHistorical } = useQuery<HistoricalData[]>({
     queryKey: ['/api/forecast', selectedClient, 'historical'],
+    queryFn: async () => {
+      const response = await fetch(`/api/forecast/${selectedClient}/historical`);
+      if (!response.ok) throw new Error('Failed to fetch historical data');
+      return response.json();
+    },
     enabled: !!selectedClient,
   });
 
@@ -93,7 +98,12 @@ export default function Forecast() {
         title: 'Success',
         description: 'Sample time-series data generated successfully',
       });
+      // Invalidate all forecast-related queries
       queryClient.invalidateQueries({ queryKey: ['/api/forecast'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/forecast/clients'] });
+      if (selectedClient) {
+        queryClient.invalidateQueries({ queryKey: ['/api/forecast', selectedClient] });
+      }
     },
     onError: () => {
       toast({

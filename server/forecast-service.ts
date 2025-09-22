@@ -224,14 +224,14 @@ CONTEXT:
     } catch (parseError) {
       console.error('Error parsing OpenAI response:', parseError);
       // Fallback to simple trend-based forecast
-      return this.generateSimpleForecast(historicalData, periodsAhead);
+      return this.generateSimpleForecast(historicalData, periodsAhead, metricType);
     }
   }
 
   /**
    * Fallback simple trend-based forecast
    */
-  private generateSimpleForecast(historicalData: TimeSeriesPoint[], periodsAhead: number): ForecastResult {
+  private generateSimpleForecast(historicalData: TimeSeriesPoint[], periodsAhead: number, metricType?: string): ForecastResult {
     const values = historicalData.map(d => d.value);
     const lastValue = values[values.length - 1];
     const trend = values.length > 1 ? (values[values.length - 1] - values[0]) / (values.length - 1) : 0;
@@ -239,11 +239,22 @@ CONTEXT:
     const predictions: TimeSeriesPoint[] = [];
     const lastDate = new Date(historicalData[historicalData.length - 1].date);
     
+    // Determine valid range based on metric type
+    const getValidRange = (value: number) => {
+      if (metricType === 'sentiment_score') {
+        // Sentiment scores range from -1 to +1
+        return Math.max(-1, Math.min(1, value));
+      } else {
+        // Churn probability and other metrics range from 0 to 1
+        return Math.max(0, Math.min(1, value));
+      }
+    };
+    
     for (let i = 1; i <= periodsAhead; i++) {
       const futureDate = new Date(lastDate);
       futureDate.setMonth(futureDate.getMonth() + i);
       
-      const predictedValue = Math.max(0, Math.min(1, lastValue + (trend * i)));
+      const predictedValue = getValidRange(lastValue + (trend * i));
       predictions.push({
         date: futureDate.toISOString().split('T')[0],
         value: predictedValue
@@ -258,7 +269,7 @@ CONTEXT:
   }
 
   /**
-   * Store forecast predictions in database
+   * Store forecast predictions in database with upsert logic
    */
   private async storeForecastPredictions(
     clientId: string,
@@ -269,6 +280,17 @@ CONTEXT:
   ): Promise<void> {
     for (const prediction of predictions) {
       try {
+        // First try to delete existing prediction for this client/type/date to ensure clean upsert
+        await db.delete(forecast_predictions)
+          .where(
+            and(
+              eq(forecast_predictions.client_id, clientId),
+              eq(forecast_predictions.forecast_type, forecastType),
+              eq(forecast_predictions.forecast_date, new Date(prediction.date))
+            )
+          );
+
+        // Then insert the new prediction
         await db.insert(forecast_predictions).values({
           client_id: clientId,
           forecast_type: forecastType,
@@ -279,11 +301,8 @@ CONTEXT:
           data_points_used: predictions.length,
         });
       } catch (error) {
-        // Ignore duplicate entries (unique constraint)
         const errorMessage = error instanceof Error ? error.message : String(error);
-        if (!errorMessage.includes('duplicate key')) {
-          console.error('Error storing forecast prediction:', error);
-        }
+        console.error('Error storing forecast prediction:', errorMessage);
       }
     }
   }
