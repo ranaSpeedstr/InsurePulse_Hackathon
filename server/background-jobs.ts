@@ -47,6 +47,9 @@ class BackgroundJobProcessor {
       // Start trigger detection for CSV changes (every 2 minutes)
       this.startTriggerDetection();
       
+      // Process sentiment analysis for existing unanalyzed data
+      setTimeout(() => this.processSentimentForNewData(), 2000);
+      
       this.isInitialized = true;
       console.log('[BackgroundJobs] Background job processor initialized successfully');
     } catch (error) {
