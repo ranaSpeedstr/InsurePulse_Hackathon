@@ -2,8 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { alerts, email_notifications, client_time_series, forecast_predictions, clients } from "../shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { alerts, email_notifications, client_time_series, forecast_predictions, clients, sentiment_analysis } from "../shared/schema";
+import { eq, desc, and, count, sql } from "drizzle-orm";
 import { triggerDetectionService } from "./trigger-detection";
 import { forecastService } from "./forecast-service";
 import { clientInsightsService } from "./client-insights-service";
@@ -39,6 +39,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching benchmarking data:", error);
       res.status(500).json({ error: "Failed to fetch benchmarking data" });
+    }
+  });
+
+  app.get("/api/dashboard/sentiment-distribution", async (req, res) => {
+    try {
+      // Get sentiment distribution from sentiment_analysis table
+      const sentimentCounts = await db
+        .select({
+          label: sentiment_analysis.sentiment_label,
+          count: count(sentiment_analysis.id),
+        })
+        .from(sentiment_analysis)
+        .groupBy(sentiment_analysis.sentiment_label);
+
+      // Calculate totals and percentages
+      const totalAnalyzed = sentimentCounts.reduce((sum, item) => sum + item.count, 0);
+
+      if (totalAnalyzed === 0) {
+        // Return consistent object structure even when no data
+        const defaultData = [
+          { name: "Positive", value: 0, color: "hsl(var(--chart-2))", count: 0 },
+          { name: "Neutral", value: 0, color: "hsl(var(--chart-3))", count: 0 },
+          { name: "Negative", value: 0, color: "hsl(var(--chart-4))", count: 0 }
+        ];
+        
+        const responseData = {
+          data: defaultData,
+          metadata: {
+            totalAnalyzed: 0,
+            lastUpdated: new Date().toISOString(),
+            analysisTypes: []
+          }
+        };
+        
+        return res.json(responseData);
+      }
+
+      // Map database labels to display format and calculate percentages
+      const sentimentMap = {
+        positive: { name: "Positive", color: "hsl(var(--chart-2))" },
+        neutral: { name: "Neutral", color: "hsl(var(--chart-3))" }, 
+        negative: { name: "Negative", color: "hsl(var(--chart-4))" }
+      };
+
+      // Initialize result with all sentiment types
+      const result = Object.entries(sentimentMap).map(([key, config]) => ({
+        name: config.name,
+        value: 0,
+        color: config.color,
+        count: 0
+      }));
+
+      // Fill in actual data
+      sentimentCounts.forEach(item => {
+        const key = item.label.toLowerCase() as keyof typeof sentimentMap;
+        if (sentimentMap[key]) {
+          const sentimentIndex = result.findIndex(r => r.name === sentimentMap[key].name);
+          if (sentimentIndex >= 0) {
+            result[sentimentIndex].count = item.count;
+            result[sentimentIndex].value = Math.round((item.count / totalAnalyzed) * 100);
+          }
+        }
+      });
+
+      // Add metadata for frontend use
+      const responseData = {
+        data: result,
+        metadata: {
+          totalAnalyzed,
+          lastUpdated: new Date().toISOString(),
+          analysisTypes: sentimentCounts.map(item => ({
+            label: item.label,
+            count: item.count,
+            percentage: Math.round((item.count / totalAnalyzed) * 100)
+          }))
+        }
+      };
+
+      console.log(`[Routes] Sentiment distribution: ${totalAnalyzed} total analyzed entries`);
+      res.json(responseData);
+    } catch (error) {
+      console.error("Error fetching sentiment distribution:", error);
+      res.status(500).json({ error: "Failed to fetch sentiment distribution" });
     }
   });
 

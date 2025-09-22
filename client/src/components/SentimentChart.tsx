@@ -9,10 +9,18 @@ interface SentimentData {
   name: string;
   value: number;
   color: string;
+  count?: number;
+}
+
+interface SentimentMetadata {
+  totalAnalyzed: number;
+  lastUpdated: string;
+  analysisTypes: Array<{ label: string; count: number; percentage: number }>;
 }
 
 interface SentimentChartProps {
   data: SentimentData[];
+  metadata?: SentimentMetadata;
   isLoading?: boolean;
 }
 
@@ -183,7 +191,7 @@ function AnimatedLegend({ payload, hoveredSegment, onSegmentHover, onSegmentLeav
   );
 }
 
-export default function SentimentChart({ data, isLoading = false }: SentimentChartProps) {
+export default function SentimentChart({ data, metadata, isLoading = false }: SentimentChartProps) {
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
   const [animationPhase, setAnimationPhase] = useState<'initial' | 'loaded'>('initial');
   const prefersReducedMotion = useReducedMotion();
@@ -230,10 +238,61 @@ export default function SentimentChart({ data, isLoading = false }: SentimentCha
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: prefersReducedMotion ? 0.01 : 0.5 }}
+              className="flex items-center justify-between"
             >
-              <CardTitle className="text-xl font-semibold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">
-                Sentiment Distribution
-              </CardTitle>
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-xl font-semibold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">
+                  Sentiment Distribution
+                </CardTitle>
+                {/* Live data indicator */}
+                <motion.div 
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  data-testid="indicator-live-data"
+                >
+                  <motion.div
+                    className="w-2 h-2 rounded-full bg-green-500"
+                    animate={prefersReducedMotion ? {} : { 
+                      scale: [1, 1.2, 1],
+                      opacity: [0.7, 1, 0.7] 
+                    }}
+                    transition={prefersReducedMotion ? {} : { 
+                      repeat: Infinity, 
+                      duration: 2, 
+                      ease: "easeInOut" 
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground font-medium">LIVE</span>
+                </motion.div>
+              </div>
+              
+              {/* Real-time metadata display */}
+              {metadata && (
+                <motion.div 
+                  className="text-right space-y-1"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                  data-testid="metadata-display"
+                >
+                  <motion.div 
+                    className="text-sm font-bold text-foreground"
+                    animate={prefersReducedMotion ? {} : { scale: [1, 1.05, 1] }}
+                    transition={prefersReducedMotion ? {} : { 
+                      repeat: Infinity, 
+                      duration: 3, 
+                      ease: "easeInOut" 
+                    }}
+                  >
+                    {metadata.totalAnalyzed.toLocaleString()} analyzed
+                  </motion.div>
+                  <div className="text-xs text-muted-foreground">
+                    Updated {new Date(metadata.lastUpdated).toLocaleTimeString()}
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           </CardHeader>
           

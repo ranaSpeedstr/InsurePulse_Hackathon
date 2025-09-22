@@ -51,16 +51,25 @@ export default function Overview() {
     queryKey: ['/api/dashboard/benchmarking'],
   });
 
+  // Fetch real-time sentiment distribution from API
+  const { data: sentimentResponse, isLoading: sentimentLoading } = useQuery<{
+    data: Array<{ name: string; value: number; color: string; count: number }>;
+    metadata: {
+      totalAnalyzed: number;
+      lastUpdated: string;
+      analysisTypes: Array<{ label: string; count: number; percentage: number }>;
+    };
+  }>({
+    queryKey: ['/api/dashboard/sentiment-distribution'],
+    refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
+  });
+
   // Chart loading states
-  const chartsLoading = metricsLoading;
+  const chartsLoading = sentimentLoading;
   const benchmarkingChartsLoading = benchmarkingLoading;
 
-  // Mock data for charts (TODO: implement API endpoints for these)
-  const sentimentData = [
-    { name: "Positive", value: 55, color: "hsl(var(--chart-2))" },
-    { name: "Neutral", value: 30, color: "hsl(var(--chart-3))" },
-    { name: "Negative", value: 15, color: "hsl(var(--chart-4))" }
-  ];
+  // Extract sentiment data from response (fallback to empty array if no data)
+  const sentimentData = sentimentResponse?.data || [];
 
   return (
     <motion.div 
@@ -132,7 +141,11 @@ export default function Overview() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
         >
-          <SentimentChart data={sentimentData} isLoading={chartsLoading} />
+          <SentimentChart 
+            data={sentimentData} 
+            metadata={sentimentResponse?.metadata}
+            isLoading={chartsLoading} 
+          />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 20 }}
