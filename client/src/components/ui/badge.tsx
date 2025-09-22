@@ -1,7 +1,10 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { motion } from "framer-motion"
 
 import { cn } from "@/lib/utils"
+import { badgeVariants as animationBadgeVariants, animationUtils } from "@/lib/animations"
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
 
 const badgeVariants = cva(
   // Whitespace-nowrap: Badges should never wrap.
@@ -27,11 +30,47 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  interactive?: boolean
+  pulse?: boolean
+  notification?: boolean
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, interactive = false, pulse = false, notification = false, ...props }: BadgeProps) {
+  const prefersReducedMotion = useReducedMotion();
+  const motionConfig = animationUtils.getReducedMotionConfig(prefersReducedMotion);
+
+  // If not interactive, render as regular div
+  if (!interactive && !pulse && !notification) {
+    return (
+      <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    );
+  }
+
+  // Determine animation state
+  const getAnimationState = () => {
+    if (notification) return 'notification';
+    if (pulse) return 'pulse';
+    return 'idle';
+  };
+
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <motion.div
+      className={cn(
+        badgeVariants({ variant }),
+        {
+          "cursor-pointer": interactive,
+        },
+        className
+      )}
+      variants={prefersReducedMotion ? undefined : animationBadgeVariants}
+      initial="idle"
+      animate={getAnimationState()}
+      whileHover={interactive && !prefersReducedMotion ? "hover" : undefined}
+      whileTap={interactive && !prefersReducedMotion ? "tap" : undefined}
+      transition={motionConfig.transition}
+      {...props}
+    />
   );
 }
 

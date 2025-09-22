@@ -1,9 +1,12 @@
 import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
+import { motion, AnimatePresence } from "framer-motion"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { toastVariants as animationToastVariants, iconVariants, animationUtils } from "@/lib/animations"
+import { useReducedMotion } from "@/hooks/use-reduced-motion"
 
 const ToastProvider = ToastPrimitives.Provider
 
@@ -43,13 +46,24 @@ const Toast = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
     VariantProps<typeof toastVariants>
 >(({ className, variant, ...props }, ref) => {
+  const prefersReducedMotion = useReducedMotion();
+  const motionConfig = animationUtils.getReducedMotionConfig(prefersReducedMotion);
+
   return (
-    <ToastPrimitives.Root
-      ref={ref}
-      className={cn(toastVariants({ variant }), className)}
-      {...props}
-    />
-  )
+    <motion.div
+      variants={prefersReducedMotion ? undefined : animationToastVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      transition={motionConfig.transition}
+    >
+      <ToastPrimitives.Root
+        ref={ref}
+        className={cn(toastVariants({ variant }), className)}
+        {...props}
+      />
+    </motion.div>
+  );
 })
 Toast.displayName = ToastPrimitives.Root.displayName
 
@@ -71,19 +85,30 @@ ToastAction.displayName = ToastPrimitives.Action.displayName
 const ToastClose = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Close>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
->(({ className, ...props }, ref) => (
-  <ToastPrimitives.Close
-    ref={ref}
-    className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
-      className
-    )}
-    toast-close=""
-    {...props}
-  >
-    <X className="h-4 w-4" />
-  </ToastPrimitives.Close>
-))
+>(({ className, ...props }, ref) => {
+  const prefersReducedMotion = useReducedMotion();
+
+  return (
+    <ToastPrimitives.Close
+      ref={ref}
+      className={cn(
+        "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+        className
+      )}
+      toast-close=""
+      {...props}
+    >
+      <motion.div
+        variants={prefersReducedMotion ? undefined : iconVariants}
+        initial="idle"
+        whileHover="hover"
+        whileTap={{ scale: 0.9 }}
+      >
+        <X className="h-4 w-4" />
+      </motion.div>
+    </ToastPrimitives.Close>
+  );
+})
 ToastClose.displayName = ToastPrimitives.Close.displayName
 
 const ToastTitle = React.forwardRef<
