@@ -254,105 +254,6 @@ export default function Forecast() {
             transition={{ duration: 0.3 }}
             className="space-y-6"
           >
-            {/* AI Insights */}
-            {(sentimentInsight || churnInsight) && (
-              <Card className="border-l-4 border-l-blue-500">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-blue-500" />
-                    AI Insights for Client {selectedClient}
-                  </CardTitle>
-                  <CardDescription>
-                    OpenAI GPT-4 analysis based on {historicalData.length} data points from {historicalData.length > 0 ? `${historicalData[0]?.date} to ${historicalData[historicalData.length - 1]?.date}` : 'available historical data'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Data Sources Section */}
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border">
-                    <div className="flex items-start gap-2 mb-3">
-                      <Database className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Data Sources Used for Analysis</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-2">
-                            <BarChart className="w-4 h-4 text-blue-500" />
-                            <span className="text-gray-700 dark:text-gray-300">
-                              Historical Sentiment Scores ({historicalData.filter(d => typeof d.sentiment_score === 'number').length} records)
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-orange-500" />
-                            <span className="text-gray-700 dark:text-gray-300">
-                              Churn Probability Trends ({historicalData.filter(d => typeof d.churn_probability === 'number').length} records)
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-green-500" />
-                            <span className="text-gray-700 dark:text-gray-300">
-                              Satisfaction Scores ({historicalData.filter(d => typeof d.satisfaction_score === 'number').length} records)
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-red-500" />
-                            <span className="text-gray-700 dark:text-gray-300">
-                              Issue Counts ({historicalData.filter(d => typeof d.issue_count === 'number').length} records)
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                            <span className="text-gray-700 dark:text-gray-300">
-                              Escalation Counts ({historicalData.filter(d => typeof d.escalation_count === 'number').length} records)
-                            </span>
-                          </div>
-                        </div>
-                        {historicalData.length > 0 && (() => {
-                          const sortedData = [...historicalData].sort((a, b) => a.date.localeCompare(b.date));
-                          const startDate = sortedData[0]?.date;
-                          const endDate = sortedData[sortedData.length - 1]?.date;
-                          
-                          return (
-                            <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-700 dark:text-blue-300">
-                              <strong>Analysis Period:</strong> {startDate} to {endDate}
-                              <span className="ml-2">• <strong>AI Model:</strong> OpenAI GPT-4</span>
-                              {(sentimentPredictions.length > 0 || churnPredictions.length > 0) && (
-                                <span className="ml-2">• <strong>Confidence:</strong> 
-                                  {sentimentPredictions.length > 0 && ` Sentiment: ${((sentimentPredictions[sentimentPredictions.length - 1]?.confidence ?? 0) * 100).toFixed(0)}%`}
-                                  {churnPredictions.length > 0 && ` Churn: ${((churnPredictions[churnPredictions.length - 1]?.confidence ?? 0) * 100).toFixed(0)}%`}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  {sentimentInsight && (
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <Lightbulb className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Sentiment Forecast</h4>
-                          <p className="text-blue-800 dark:text-blue-200 text-sm">{sentimentInsight}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {churnInsight && (
-                    <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-medium text-orange-900 dark:text-orange-100 mb-2">Churn Risk Analysis</h4>
-                          <p className="text-orange-800 dark:text-orange-200 text-sm">{churnInsight}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
             {/* Forecast Charts */}
             <Tabs defaultValue="sentiment" className="space-y-6">
               <TabsList className="grid w-full grid-cols-2">
@@ -542,6 +443,105 @@ export default function Forecast() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {/* AI Insights */}
+            {(sentimentInsight || churnInsight) && (
+              <Card className="border-l-4 border-l-blue-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-blue-500" />
+                    AI Insights for Client {selectedClient}
+                  </CardTitle>
+                  <CardDescription>
+                    OpenAI GPT-4 analysis based on {historicalData.length} data points from {historicalData.length > 0 ? `${historicalData[0]?.date} to ${historicalData[historicalData.length - 1]?.date}` : 'available historical data'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Data Sources Section */}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border">
+                    <div className="flex items-start gap-2 mb-3">
+                      <Database className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Data Sources Used for Analysis</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <BarChart className="w-4 h-4 text-blue-500" />
+                            <span className="text-gray-700 dark:text-gray-300">
+                              Historical Sentiment Scores ({historicalData.filter(d => typeof d.sentiment_score === 'number').length} records)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-orange-500" />
+                            <span className="text-gray-700 dark:text-gray-300">
+                              Churn Probability Trends ({historicalData.filter(d => typeof d.churn_probability === 'number').length} records)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-green-500" />
+                            <span className="text-gray-700 dark:text-gray-300">
+                              Satisfaction Scores ({historicalData.filter(d => typeof d.satisfaction_score === 'number').length} records)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-red-500" />
+                            <span className="text-gray-700 dark:text-gray-300">
+                              Issue Counts ({historicalData.filter(d => typeof d.issue_count === 'number').length} records)
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                            <span className="text-gray-700 dark:text-gray-300">
+                              Escalation Counts ({historicalData.filter(d => typeof d.escalation_count === 'number').length} records)
+                            </span>
+                          </div>
+                        </div>
+                        {historicalData.length > 0 && (() => {
+                          const sortedData = [...historicalData].sort((a, b) => a.date.localeCompare(b.date));
+                          const startDate = sortedData[0]?.date;
+                          const endDate = sortedData[sortedData.length - 1]?.date;
+                          
+                          return (
+                            <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-blue-700 dark:text-blue-300">
+                              <strong>Analysis Period:</strong> {startDate} to {endDate}
+                              <span className="ml-2">• <strong>AI Model:</strong> OpenAI GPT-4</span>
+                              {(sentimentPredictions.length > 0 || churnPredictions.length > 0) && (
+                                <span className="ml-2">• <strong>Confidence:</strong> 
+                                  {sentimentPredictions.length > 0 && ` Sentiment: ${((sentimentPredictions[sentimentPredictions.length - 1]?.confidence ?? 0) * 100).toFixed(0)}%`}
+                                  {churnPredictions.length > 0 && ` Churn: ${((churnPredictions[churnPredictions.length - 1]?.confidence ?? 0) * 100).toFixed(0)}%`}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {sentimentInsight && (
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Sentiment Forecast</h4>
+                          <p className="text-blue-800 dark:text-blue-200 text-sm">{sentimentInsight}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {churnInsight && (
+                    <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-medium text-orange-900 dark:text-orange-100 mb-2">Churn Risk Analysis</h4>
+                          <p className="text-orange-800 dark:text-orange-200 text-sm">{churnInsight}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </motion.div>
         </AnimatePresence>
       )}
