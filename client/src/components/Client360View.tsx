@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { User, Building, DollarSign, TrendingUp, MessageSquare } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { User, Building, DollarSign, TrendingUp, MessageSquare, AlertTriangle, Users, Wrench, Target, CheckCircle2 } from "lucide-react";
 
 interface ClientProfile {
   id: string;
@@ -176,19 +177,199 @@ export default function Client360View({ profile, feedback, metrics }: Client360V
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-4">
-          <Card>
+          {/* Enhanced AI Insights Header */}
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6 rounded-lg text-white mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Target className="w-6 h-6" />
+              <h2 className="text-xl font-bold">AI-Powered Root Cause Analysis</h2>
+            </div>
+            <p className="text-blue-100">
+              Comprehensive analysis of client data sources with actionable corrective measures and stakeholder assignments
+            </p>
+          </div>
+
+          {/* Root Cause Analysis Table */}
+          <Card className="border-2 border-blue-200 shadow-lg">
+            <CardHeader className="bg-blue-50 dark:bg-blue-900/20">
+              <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+                <AlertTriangle className="w-5 h-5" />
+                Root Cause → Corrective Action Mapping
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 dark:bg-gray-800">
+                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                        Root Cause
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">
+                      <div className="flex items-center gap-2">
+                        <Wrench className="w-4 h-4 text-blue-500" />
+                        Corrective Measure
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-green-500" />
+                        Stakeholder
+                      </div>
+                    </TableHead>
+                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-purple-500" />
+                        Implementation Notes
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow className="hover:bg-red-50 dark:hover:bg-red-900/10 border-l-4 border-l-red-500">
+                    <TableCell className="font-medium">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                        <span>Slow Support Response</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium text-blue-700 dark:text-blue-300">AI-driven ticket triage</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Auto-classify urgency + route to right team</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-green-50 border-green-200 text-green-800">
+                        Claims/Support Ops
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      Use dashboard to monitor response SLAs & auto-alert when &gt;4 hours
+                    </TableCell>
+                  </TableRow>
+                  
+                  <TableRow className="hover:bg-orange-50 dark:hover:bg-orange-900/10 border-l-4 border-l-orange-500">
+                    <TableCell className="font-medium">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span>Product Bugs/Defects</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium text-blue-700 dark:text-blue-300">Build Defect Heatmap</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Auto-track resolution time & severity</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-800">
+                        IT / Engineering
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      Feed data from JIRA/GitHub APIs, track avg bug resolution days
+                    </TableCell>
+                  </TableRow>
+                  
+                  <TableRow className="hover:bg-yellow-50 dark:hover:bg-yellow-900/10 border-l-4 border-l-yellow-500">
+                    <TableCell className="font-medium">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                        <span>Escalations Not Handled</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium text-blue-700 dark:text-blue-300">Escalation SLA Tracker</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Notify Account Managers automatically</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-purple-50 border-purple-200 text-purple-800">
+                        Client Success
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      Simulation: improving escalation handling by 15% → 23% churn reduction
+                    </TableCell>
+                  </TableRow>
+                  
+                  <TableRow className="hover:bg-indigo-50 dark:hover:bg-indigo-900/10 border-l-4 border-l-indigo-500">
+                    <TableCell className="font-medium">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                        <span>Feature Delivery Gaps</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium text-blue-700 dark:text-blue-300">Prioritize by NPS impact</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Map features to sentiment uplift</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-indigo-50 border-indigo-200 text-indigo-800">
+                        Product Mgmt
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      Dashboard shows ROI of delivery, feature-to-sentiment correlation
+                    </TableCell>
+                  </TableRow>
+                  
+                  <TableRow className="hover:bg-teal-50 dark:hover:bg-teal-900/10 border-l-4 border-l-teal-500">
+                    <TableCell className="font-medium">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-teal-500 mt-0.5 flex-shrink-0" />
+                        <span>Poor Communication</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium text-blue-700 dark:text-blue-300">Proactive Feedback Timeline</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Auto-emails, client check-in reports</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="bg-teal-50 border-teal-200 text-teal-800">
+                        Customer Success
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      Generate "Weekly Client 360 PDF" with risk & recommendations
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Implementation Priority Card */}
+          <Card className="border-l-4 border-l-green-500 bg-green-50 dark:bg-green-900/20">
             <CardHeader>
-              <CardTitle>AI Insights</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-green-900 dark:text-green-100">
+                <Target className="w-5 h-5" />
+                Recommended Implementation Priority
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="p-4 bg-chart-2/10 border border-chart-2/20 rounded-lg">
-                  <h4 className="font-medium text-chart-2 mb-2">Root Causes</h4>
-                  <p className="text-sm">Consistent communication and high-quality deliverables are driving strong client satisfaction. Proactive issue resolution prevents escalation.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                  <div className="text-lg font-bold text-red-700 dark:text-red-300">Phase 1</div>
+                  <div className="text-sm text-red-600 dark:text-red-400">Support Response & Escalations</div>
+                  <div className="text-xs text-red-500 dark:text-red-500 mt-1">High Impact, Quick Win</div>
                 </div>
-                <div className="p-4 bg-chart-1/10 border border-chart-1/20 rounded-lg">
-                  <h4 className="font-medium text-chart-1 mb-2">Recommendations</h4>
-                  <p className="text-sm">Continue regular check-ins and scope alignment meetings. Explore opportunities for upselling new services based on demonstrated value.</p>
+                <div className="text-center p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <div className="text-lg font-bold text-orange-700 dark:text-orange-300">Phase 2</div>
+                  <div className="text-sm text-orange-600 dark:text-orange-400">Product & Communication</div>
+                  <div className="text-xs text-orange-500 dark:text-orange-500 mt-1">Medium Impact, 2-4 weeks</div>
+                </div>
+                <div className="text-center p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <div className="text-lg font-bold text-green-700 dark:text-green-300">Phase 3</div>
+                  <div className="text-sm text-green-600 dark:text-green-400">Feature Delivery</div>
+                  <div className="text-xs text-green-500 dark:text-green-500 mt-1">Long-term, Strategic</div>
                 </div>
               </div>
             </CardContent>
