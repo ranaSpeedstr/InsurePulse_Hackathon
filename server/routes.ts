@@ -6,6 +6,7 @@ import { alerts, email_notifications, client_time_series, forecast_predictions, 
 import { eq, desc, and } from "drizzle-orm";
 import { triggerDetectionService } from "./trigger-detection";
 import { forecastService } from "./forecast-service";
+import { clientInsightsService } from "./client-insights-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Analytics Routes
@@ -60,6 +61,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  app.get("/api/clients/:id/insights", async (req, res) => {
+    try {
+      const clientId = req.params.id;
+      console.log(`[Routes] Generating insights for client ${clientId}`);
+      
+      const insights = await clientInsightsService.generateClientInsights(clientId);
+      res.json(insights);
+    } catch (error) {
+      console.error("Error generating client insights:", error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      if (errorMessage.includes('not found')) {
+        res.status(404).json({ error: `Client ${req.params.id} not found` });
+      } else {
+        res.status(500).json({ 
+          error: "Failed to generate client insights",
+          details: errorMessage
+        });
+      }
     }
   });
 
@@ -175,7 +199,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(forecast);
     } catch (error) {
       console.error("Error generating forecast:", error);
-      res.status(500).json({ error: "Failed to generate forecast: " + error.message });
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      res.status(500).json({ error: "Failed to generate forecast: " + errorMessage });
     }
   });
 

@@ -246,3 +246,35 @@ export type InsertClientTimeSeries = z.infer<typeof insertClientTimeSeriesSchema
 export type ClientTimeSeries = typeof client_time_series.$inferSelect;
 export type InsertForecastPrediction = z.infer<typeof insertForecastPredictionSchema>;
 export type ForecastPrediction = typeof forecast_predictions.$inferSelect;
+
+// AI Client Insights Types
+export interface AIInsightItem {
+  title: string;
+  description: string;
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  category: 'risk' | 'opportunity' | 'performance' | 'retention';
+  confidence: number; // 0-100
+}
+
+export interface ActionItem {
+  title: string;
+  description: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Urgent';
+  assignee: string;
+  timeline: string;
+  expectedImpact: string;
+}
+
+export interface ClientInsights {
+  clientId: string;
+  generatedAt: string;
+  overallHealthScore: number; // 0-100
+  healthAssessment: string;
+  riskFactors: AIInsightItem[];
+  opportunities: AIInsightItem[];
+  actionItems: ActionItem[];
+  trendAnalysis: string;
+  dataSourcesAnalyzed: string[];
+  confidenceScore: number; // 0-100
+  nextReviewDate: string;
+}
