@@ -76,7 +76,7 @@ function SentimentChartSkeleton() {
         <Skeleton className="h-6 w-48 bg-gradient-to-r from-muted to-muted/60" />
       </CardHeader>
       <CardContent>
-        <div className="h-80 flex items-center justify-center">
+        <div className="h-64 flex items-center justify-center">
           <div className="relative">
             <Skeleton className="h-60 w-60 rounded-full bg-gradient-to-r from-muted to-muted/60" />
             <Skeleton className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-32 w-32 rounded-full bg-background" />

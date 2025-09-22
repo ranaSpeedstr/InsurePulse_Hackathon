@@ -59,7 +59,7 @@ function ClientBenchmarkingSkeleton() {
         <Skeleton className="h-6 w-40 bg-gradient-to-r from-muted to-muted/60" />
       </CardHeader>
       <CardContent>
-        <div className="h-80 flex items-end justify-center gap-4 px-8">
+        <div className="h-64 flex items-end justify-center gap-4 px-8">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="flex-1 flex flex-col gap-1">
               <div className="flex gap-1">

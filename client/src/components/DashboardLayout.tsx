@@ -95,9 +95,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     whileHover={{ rotate: 5, scale: 1.1 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
-                    <img src={logoImage} alt="Logo" className="w-5 h-5 relative z-10" />
+                    <img src={logoImage} alt="InsurePulse logo" className="w-5 h-5 relative z-10" />
                   </motion.div>
-                  <span className="font-semibold text-sidebar-foreground tracking-wide">InsurePluse</span>
+                  <span className="font-semibold text-sidebar-foreground tracking-wide">InsurePulse</span>
                 </motion.div>
               </motion.div>
               <SidebarGroupContent className="px-2 py-2">
