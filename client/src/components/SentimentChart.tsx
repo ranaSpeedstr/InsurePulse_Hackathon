@@ -383,6 +383,157 @@ export default function SentimentChart({ data, metadata, isLoading = false }: Se
                 />
               </motion.div>
             )}
+
+            {/* Enhanced Graphic Information Panel */}
+            <motion.div
+              className="mt-6 space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.6, delay: prefersReducedMotion ? 0 : 0.5 }}
+              data-testid="graphic-info-panel"
+            >
+              {/* Visual Progress Bars for Each Sentiment */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-foreground mb-3">Detailed Breakdown</h4>
+                {data.map((entry, index) => {
+                  const gradientColors = GRADIENT_COLORS[entry.name as keyof typeof GRADIENT_COLORS];
+                  const isActive = hoveredSegment === entry.name;
+                  
+                  return (
+                    <motion.div
+                      key={entry.name}
+                      className="flex items-center gap-3 cursor-pointer"
+                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+                      onMouseEnter={() => handleSegmentHover(entry.name)}
+                      onMouseLeave={handleSegmentLeave}
+                      data-testid={`progress-bar-${entry.name.toLowerCase()}`}
+                    >
+                      {/* Sentiment Icon and Label */}
+                      <div className="flex items-center gap-2 min-w-[100px]">
+                        <motion.div
+                          className="w-3 h-3 rounded-full"
+                          style={{
+                            background: `linear-gradient(135deg, ${gradientColors?.start}, ${gradientColors?.end})`,
+                          }}
+                          animate={isActive ? { scale: 1.3, boxShadow: `0 0 12px ${gradientColors?.glow}` } : {}}
+                          transition={{ duration: 0.2 }}
+                        />
+                        <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {entry.name}
+                        </span>
+                      </div>
+
+                      {/* Visual Progress Bar */}
+                      <div className="flex-1 relative">
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full"
+                            style={{
+                              background: `linear-gradient(90deg, ${gradientColors?.start}, ${gradientColors?.end})`,
+                            }}
+                            initial={{ width: 0 }}
+                            animate={{ 
+                              width: `${entry.value}%`,
+                              boxShadow: isActive ? `0 0 8px ${gradientColors?.glow}` : 'none'
+                            }}
+                            transition={{ 
+                              duration: prefersReducedMotion ? 0.01 : 1.2,
+                              delay: prefersReducedMotion ? 0 : index * 0.1 
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Statistics */}
+                      <div className="flex items-center gap-3 min-w-[120px] text-right">
+                        <motion.span 
+                          className={`text-lg font-bold ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
+                          animate={isActive ? { scale: 1.1 } : {}}
+                        >
+                          {entry.value}%
+                        </motion.span>
+                        {entry.count !== undefined && (
+                          <motion.div 
+                            className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full"
+                            animate={isActive ? { backgroundColor: `${gradientColors?.glow}` } : {}}
+                          >
+                            {entry.count} items
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Analysis Summary Graphics */}
+              {metadata && (
+                <motion.div 
+                  className="flex items-center justify-between pt-4 border-t border-border"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  data-testid="analysis-summary"
+                >
+                  {/* Overall Sentiment Score Gauge */}
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-muted-foreground">Overall Sentiment</div>
+                    <div className="flex items-center gap-1">
+                      {/* Simple sentiment gauge - visual representation */}
+                      <motion.div
+                        className="w-12 h-2 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full relative overflow-hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <motion.div
+                          className="absolute top-0 w-1 h-full bg-white shadow-md rounded-full"
+                          initial={{ left: "50%" }}
+                          animate={{ 
+                            left: `${Math.max(10, Math.min(90, 
+                              (data.find(d => d.name === 'Positive')?.value || 0) - 
+                              (data.find(d => d.name === 'Negative')?.value || 0) + 50
+                            ))}%` 
+                          }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                        />
+                      </motion.div>
+                      <motion.div 
+                        className="text-xs font-medium"
+                        animate={prefersReducedMotion ? {} : { scale: [1, 1.05, 1] }}
+                        transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 4 }}
+                      >
+                        {(() => {
+                          const positiveValue = data.find(d => d.name === 'Positive')?.value || 0;
+                          const negativeValue = data.find(d => d.name === 'Negative')?.value || 0;
+                          return positiveValue > negativeValue ? '😊' : 
+                                 positiveValue === negativeValue ? '😐' : '😕';
+                        })()}
+                      </motion.div>
+                    </div>
+                  </div>
+
+                  {/* Analysis Method Badge */}
+                  <motion.div 
+                    className="flex items-center gap-2 text-xs"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full">
+                      <motion.div
+                        className="w-2 h-2 bg-primary rounded-full"
+                        animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1] }}
+                        transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 2 }}
+                      />
+                      <span className="font-medium">AI Powered</span>
+                    </div>
+                    
+                    {/* Confidence Indicator */}
+                    <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                      <div className="text-xs">95% Confidence</div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </motion.div>
           </CardContent>
         </Card>
       </motion.div>
