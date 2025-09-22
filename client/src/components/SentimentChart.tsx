@@ -397,87 +397,94 @@ export default function SentimentChart({ data, metadata, isLoading = false }: Se
               </motion.div>
             )}
 
-            {/* Enhanced Graphic Information Panel */}
+            {/* Detailed Breakdown Section */}
             <motion.div
-              className="mt-6 space-y-4"
+              className="mt-4 space-y-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.6, delay: prefersReducedMotion ? 0 : 0.3 }}
+              data-testid="detailed-breakdown-section"
+            >
+              <h4 className="text-sm font-semibold text-foreground mb-3">Detailed Breakdown</h4>
+              {data.map((entry, index) => {
+                const gradientColors = GRADIENT_COLORS[entry.name as keyof typeof GRADIENT_COLORS];
+                const isActive = hoveredSegment === entry.name;
+                
+                return (
+                  <motion.div
+                    key={entry.name}
+                    className="flex items-center gap-3 cursor-pointer"
+                    whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
+                    onMouseEnter={() => handleSegmentHover(entry.name)}
+                    onMouseLeave={handleSegmentLeave}
+                    data-testid={`progress-bar-${entry.name.toLowerCase()}`}
+                  >
+                    {/* Sentiment Icon and Label */}
+                    <div className="flex items-center gap-2 min-w-[100px]">
+                      <motion.div
+                        className="w-3 h-3 rounded-full"
+                        style={{
+                          background: `linear-gradient(135deg, ${gradientColors?.start}, ${gradientColors?.end})`,
+                        }}
+                        animate={isActive ? { scale: 1.3, boxShadow: `0 0 12px ${gradientColors?.glow}` } : {}}
+                        transition={{ duration: 0.2 }}
+                      />
+                      <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        {entry.name}
+                      </span>
+                    </div>
+
+                    {/* Visual Progress Bar */}
+                    <div className="flex-1 relative">
+                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{
+                            background: `linear-gradient(90deg, ${gradientColors?.start}, ${gradientColors?.end})`,
+                          }}
+                          initial={{ width: 0 }}
+                          animate={{ 
+                            width: `${entry.value}%`,
+                            boxShadow: isActive ? `0 0 8px ${gradientColors?.glow}` : 'none'
+                          }}
+                          transition={{ 
+                            duration: prefersReducedMotion ? 0.01 : 1.2,
+                            delay: prefersReducedMotion ? 0 : index * 0.1 
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Statistics */}
+                    <div className="flex items-center gap-3 min-w-[120px] text-right">
+                      <motion.span 
+                        className={`text-lg font-bold ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
+                        animate={isActive ? { scale: 1.1 } : {}}
+                      >
+                        {entry.value}%
+                      </motion.span>
+                      {entry.count !== undefined && (
+                        <motion.div 
+                          className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full"
+                          animate={isActive ? { backgroundColor: `${gradientColors?.glow}` } : {}}
+                        >
+                          {entry.count} items
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* Client Data Sources Section */}
+            <motion.div
+              className="mt-6"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: prefersReducedMotion ? 0.01 : 0.6, delay: prefersReducedMotion ? 0 : 0.5 }}
               data-testid="graphic-info-panel"
             >
-              {/* Visual Progress Bars for Each Sentiment */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-foreground mb-3">Detailed Breakdown</h4>
-                {data.map((entry, index) => {
-                  const gradientColors = GRADIENT_COLORS[entry.name as keyof typeof GRADIENT_COLORS];
-                  const isActive = hoveredSegment === entry.name;
-                  
-                  return (
-                    <motion.div
-                      key={entry.name}
-                      className="flex items-center gap-3 cursor-pointer"
-                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
-                      onMouseEnter={() => handleSegmentHover(entry.name)}
-                      onMouseLeave={handleSegmentLeave}
-                      data-testid={`progress-bar-${entry.name.toLowerCase()}`}
-                    >
-                      {/* Sentiment Icon and Label */}
-                      <div className="flex items-center gap-2 min-w-[100px]">
-                        <motion.div
-                          className="w-3 h-3 rounded-full"
-                          style={{
-                            background: `linear-gradient(135deg, ${gradientColors?.start}, ${gradientColors?.end})`,
-                          }}
-                          animate={isActive ? { scale: 1.3, boxShadow: `0 0 12px ${gradientColors?.glow}` } : {}}
-                          transition={{ duration: 0.2 }}
-                        />
-                        <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          {entry.name}
-                        </span>
-                      </div>
-
-                      {/* Visual Progress Bar */}
-                      <div className="flex-1 relative">
-                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                          <motion.div
-                            className="h-full rounded-full"
-                            style={{
-                              background: `linear-gradient(90deg, ${gradientColors?.start}, ${gradientColors?.end})`,
-                            }}
-                            initial={{ width: 0 }}
-                            animate={{ 
-                              width: `${entry.value}%`,
-                              boxShadow: isActive ? `0 0 8px ${gradientColors?.glow}` : 'none'
-                            }}
-                            transition={{ 
-                              duration: prefersReducedMotion ? 0.01 : 1.2,
-                              delay: prefersReducedMotion ? 0 : index * 0.1 
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Statistics */}
-                      <div className="flex items-center gap-3 min-w-[120px] text-right">
-                        <motion.span 
-                          className={`text-lg font-bold ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}
-                          animate={isActive ? { scale: 1.1 } : {}}
-                        >
-                          {entry.value}%
-                        </motion.span>
-                        {entry.count !== undefined && (
-                          <motion.div 
-                            className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full"
-                            animate={isActive ? { backgroundColor: `${gradientColors?.glow}` } : {}}
-                          >
-                            {entry.count} items
-                          </motion.div>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
 
               {/* Client-Based Data Sources Section */}
               {metadata && (
