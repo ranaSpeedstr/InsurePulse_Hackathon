@@ -210,43 +210,22 @@ class BackgroundJobProcessor {
     console.log(`[BackgroundJobs] Fetching emails from ${emailAddress}`);
     
     try {
-      // First try with strict certificate validation
-      let connection: any;
-      try {
-        connection = await imaps.connect({
-          imap: {
-            user: emailAddress,
-            password: password,
-            host: 'imap.gmail.com',
-            port: 993,
-            tls: true,
-            tlsOptions: {
-              rejectUnauthorized: true,
-              servername: 'imap.gmail.com'
-            },
-            authTimeout: 15000,
-            connTimeout: 15000
-          }
-        });
-      } catch (certError) {
-        console.warn(`[BackgroundJobs] Certificate validation failed for ${emailAddress}, trying with relaxed settings:`, certError.message);
-        
-        // Fallback with relaxed certificate validation for development
-        connection = await imaps.connect({
-          imap: {
-            user: emailAddress,
-            password: password,
-            host: 'imap.gmail.com',
-            port: 993,
-            tls: true,
-            tlsOptions: {
-              rejectUnauthorized: false
-            },
-            authTimeout: 15000,
-            connTimeout: 15000
-          }
-        });
-      }
+      // Connect with strict certificate validation
+      const connection = await imaps.connect({
+        imap: {
+          user: emailAddress,
+          password: password,
+          host: 'imap.gmail.com',
+          port: 993,
+          tls: true,
+          tlsOptions: {
+            rejectUnauthorized: true,
+            servername: 'imap.gmail.com'
+          },
+          authTimeout: 15000,
+          connTimeout: 15000
+        }
+      });
 
       await connection.openBox('INBOX');
       
@@ -446,7 +425,11 @@ class BackgroundJobProcessor {
       response_format: { type: "json_object" }
     });
 
-    const result = JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error('No content in OpenAI response');
+    }
+    const result = JSON.parse(content);
     return {
       sentiment_score: result.sentiment_score,
       sentiment_label: result.sentiment_label,
@@ -544,11 +527,21 @@ class BackgroundJobProcessor {
         vectors.push(vector);
       });
 
-      // Perform K-means clustering (import default function)
-      const numClusters = Math.min(3, vectors.length);
+      // Perform K-means clustering (skip if insufficient data)
+      if (vectors.length < 2) {
+        console.log(`[BackgroundJobs] Insufficient data for clustering (${vectors.length} vectors), skipping`);
+        return;
+      }
+      
+      const numClusters = Math.min(3, Math.max(1, vectors.length)); // Ensure k >= 1
       const kmeansModule = await import('ml-kmeans');
-      const kmeansFunc = kmeansModule.default || kmeansModule;
-      const clusters = kmeansFunc(vectors, numClusters, { initialization: 'random' });
+      const kmeans = kmeansModule.default ?? kmeansModule;
+      
+      if (typeof kmeans !== 'function') {
+        throw new Error('Failed to import kmeans function from ml-kmeans');
+      }
+      
+      const clusters = kmeans(vectors, numClusters, { initialization: 'random' });
 
       // Update sentiment analysis records with cluster IDs using correct mapping
       for (let i = 0; i < docMappings.length; i++) {
@@ -563,6 +556,7 @@ class BackgroundJobProcessor {
       console.log(`[BackgroundJobs] Clustering completed with ${numClusters} clusters for ${vectors.length} documents`);
     } catch (error) {
       console.error('[BackgroundJobs] Clustering error:', error);
+      // Continue running other background jobs even if clustering fails
     }
   }
 

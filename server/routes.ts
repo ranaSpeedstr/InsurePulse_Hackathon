@@ -182,10 +182,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/forecast/:clientId/predictions", async (req, res) => {
     try {
       const { clientId } = req.params;
-      const { type } = req.query;
+      let { type } = req.query;
       
-      if (!type || !['sentiment', 'churn_risk'].includes(type as string)) {
-        return res.status(400).json({ error: "Invalid forecast type. Must be 'sentiment' or 'churn_risk'" });
+      // Handle aliases and provide default
+      if (type === 'churn') {
+        type = 'churn_risk';
+      } else if (!type) {
+        type = 'sentiment'; // default
+      }
+      
+      if (!['sentiment', 'churn_risk'].includes(type as string)) {
+        return res.status(400).json({ error: "Invalid forecast type. Must be 'sentiment', 'churn', or 'churn_risk'" });
       }
 
       const predictions = await forecastService.getStoredForecasts(clientId, type as 'sentiment' | 'churn_risk');
