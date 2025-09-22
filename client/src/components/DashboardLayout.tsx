@@ -4,7 +4,7 @@ import { BarChart3, Users, TrendingUp, Settings, AlertTriangle, Home } from "luc
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import logoImage from "@assets/Gemini_Generated_Image_9i05bb9i05bb9i05_1758546274183.png";
+import logoImage from "@assets/generated_images/Professional_analytics_company_logo_932e6c2c.png";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -91,12 +91,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   transition={{ type: "spring", stiffness: 400, damping: 17 }}
                 >
                   <motion.div
-                    className="relative rounded-md"
-                    whileHover={{ scale: 1.05 }}
+                    className="relative p-1 rounded-md bg-logo-gradient"
+                    whileHover={{ rotate: 5, scale: 1.1 }}
                     transition={{ type: "spring", stiffness: 400, damping: 17 }}
                   >
-                    <img src={logoImage} alt="INSURPULSE Logo" className="h-8 w-auto relative z-10" />
+                    <img src={logoImage} alt="Logo" className="w-5 h-5 relative z-10" />
                   </motion.div>
+                  <span className="font-semibold text-sidebar-foreground tracking-wide">Analytics</span>
                 </motion.div>
               </motion.div>
               <SidebarGroupContent className="px-2 py-2">

@@ -3,7 +3,6 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { backgroundJobProcessor } from "./background-jobs";
 import { assetWatcher } from "./asset-watcher";
-import { webSocketService } from "./websocket-service";
 
 const app = express();
 app.use(express.json());
@@ -63,14 +62,6 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  // Initialize WebSocket server before starting HTTP server
-  try {
-    webSocketService.initialize(server);
-    log('WebSocket server initialized successfully');
-  } catch (error) {
-    log('Failed to initialize WebSocket server:', String(error));
-  }
-
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,
@@ -91,14 +82,6 @@ app.use((req, res, next) => {
     try {
       await assetWatcher.start();
       log('Asset watcher started successfully');
-      
-      // Connect asset watcher to WebSocket service for real-time notifications
-      assetWatcher.on('dataUpdated', (assetData) => {
-        log('Asset data updated, broadcasting to WebSocket clients...');
-        webSocketService.broadcastDataRefresh(assetData);
-      });
-      
-      log('Asset watcher connected to WebSocket service');
     } catch (error) {
       log('Failed to start asset watcher:', String(error));
     }

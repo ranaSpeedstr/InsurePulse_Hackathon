@@ -111,7 +111,6 @@ export class AssetWatcher extends EventEmitter {
    */
   async refresh(): Promise<AssetData | null> {
     await this.parseAndCache();
-    this.emit('dataUpdated', this.cachedData);
     return this.cachedData;
   }
 }

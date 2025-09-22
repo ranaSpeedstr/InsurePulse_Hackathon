@@ -187,7 +187,9 @@ class BackgroundJobProcessor {
 
   private async fetchEmails() {
     const emailAccounts = [
-      { email: 'csdinsure@gmail.com', password: process.env.GMAIL_APP_PASSWORD }
+      { email: 'csdinsure@gmail.com', password: process.env.GMAIL_APP_PASSWORD },
+      { email: 'a.clientinsure@gmail.com', password: process.env.GMAIL_APP_PASSWORD_A || process.env.GMAIL_APP_PASSWORD },
+      { email: 'b.clientinsure@gmail.com', password: process.env.GMAIL_APP_PASSWORD_B || process.env.GMAIL_APP_PASSWORD }
     ];
 
     for (const account of emailAccounts) {
@@ -533,7 +535,7 @@ class BackgroundJobProcessor {
       
       const numClusters = Math.min(3, Math.max(1, vectors.length)); // Ensure k >= 1
       const kmeansModule = await import('ml-kmeans');
-      const kmeans = (kmeansModule.default ?? kmeansModule) as any;
+      const kmeans = kmeansModule.default ?? kmeansModule;
       
       if (typeof kmeans !== 'function') {
         throw new Error('Failed to import kmeans function from ml-kmeans');

@@ -3,7 +3,6 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useWebSocket } from "@/hooks/useWebSocket";
 import DashboardLayout from "@/components/DashboardLayout";
 import Overview from "@/pages/Overview";
 import Clients from "@/pages/Clients";
@@ -27,30 +26,12 @@ function Router() {
   );
 }
 
-// WebSocket wrapper component to handle connection at the app level
-function WebSocketProvider({ children }: { children: React.ReactNode }) {
-  const { connectionState, clientId } = useWebSocket({
-    autoConnect: true,
-    reconnectAttempts: 5,
-    reconnectInterval: 1000,
-    maxReconnectInterval: 30000,
-    backoffMultiplier: 2,
-  });
-
-  // Optional: Log connection state changes for development
-  console.log('[WebSocket] Connection state:', connectionState, clientId ? `(Client ID: ${clientId})` : '');
-
-  return <>{children}</>;
-}
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WebSocketProvider>
-          <Toaster />
-          <Router />
-        </WebSocketProvider>
+        <Toaster />
+        <Router />
       </TooltipProvider>
     </QueryClientProvider>
   );
