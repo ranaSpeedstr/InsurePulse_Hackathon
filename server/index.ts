@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { backgroundJobProcessor } from "./background-jobs";
+import { assetWatcher } from "./asset-watcher";
 
 const app = express();
 app.use(express.json());
@@ -75,6 +76,14 @@ app.use((req, res, next) => {
       log('Background job processor started successfully');
     } catch (error) {
       log('Failed to start background job processor:', String(error));
+    }
+
+    // Initialize asset watcher for real-time file monitoring
+    try {
+      await assetWatcher.start();
+      log('Asset watcher started successfully');
+    } catch (error) {
+      log('Failed to start asset watcher:', String(error));
     }
   });
 })();

@@ -7,6 +7,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { triggerDetectionService } from "./trigger-detection";
 import { forecastService } from "./forecast-service";
 import { clientInsightsService } from "./client-insights-service";
+import { assetWatcher } from "./asset-watcher";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Analytics Routes
@@ -94,6 +95,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
           details: errorMessage
         });
       }
+    }
+  });
+
+  // Asset-based data routes (from attached_assets folder)
+  app.get("/api/assets/profiles", async (req, res) => {
+    try {
+      const cachedData = assetWatcher.getCachedData();
+      if (cachedData) {
+        res.json(cachedData.profiles);
+      } else {
+        // If no cached data, try to refresh
+        const refreshedData = await assetWatcher.refresh();
+        res.json(refreshedData?.profiles || {});
+      }
+    } catch (error) {
+      console.error("Error fetching asset profiles:", error);
+      res.status(500).json({ error: "Failed to fetch client profiles from assets" });
+    }
+  });
+
+  app.get("/api/assets/feedback", async (req, res) => {
+    try {
+      const cachedData = assetWatcher.getCachedData();
+      if (cachedData) {
+        res.json(cachedData.feedback);
+      } else {
+        // If no cached data, try to refresh
+        const refreshedData = await assetWatcher.refresh();
+        res.json(refreshedData?.feedback || {});
+      }
+    } catch (error) {
+      console.error("Error fetching asset feedback:", error);
+      res.status(500).json({ error: "Failed to fetch feedback data from assets" });
+    }
+  });
+
+  app.get("/api/assets/metrics", async (req, res) => {
+    try {
+      const cachedData = assetWatcher.getCachedData();
+      if (cachedData) {
+        res.json(cachedData.metrics);
+      } else {
+        // If no cached data, try to refresh
+        const refreshedData = await assetWatcher.refresh();
+        res.json(refreshedData?.metrics || {});
+      }
+    } catch (error) {
+      console.error("Error fetching asset metrics:", error);
+      res.status(500).json({ error: "Failed to fetch metrics data from assets" });
+    }
+  });
+
+  app.post("/api/assets/refresh", async (req, res) => {
+    try {
+      console.log("[Routes] Manual refresh of asset data requested");
+      const refreshedData = await assetWatcher.refresh();
+      res.json({
+        success: true,
+        message: "Asset data refreshed successfully",
+        data: refreshedData
+      });
+    } catch (error) {
+      console.error("Error refreshing asset data:", error);
+      res.status(500).json({ error: "Failed to refresh asset data" });
     }
   });
 
