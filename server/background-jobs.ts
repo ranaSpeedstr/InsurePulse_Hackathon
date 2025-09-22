@@ -12,6 +12,7 @@ import { db } from './db';
 import { emails, sentiment_analysis, file_processing, conversations } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import { importAllData } from './data-import';
+import { triggerDetectionService } from './trigger-detection';
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -22,6 +23,7 @@ class BackgroundJobProcessor {
   private fileWatcher: any = null;
   private emailInterval: any = null;
   private clusteringInterval: any = null;
+  private triggerInterval: any = null;
 
   async initialize() {
     if (this.isInitialized) return;
@@ -42,6 +44,9 @@ class BackgroundJobProcessor {
       // Start clustering analysis (every 30 minutes)
       this.startClustering();
       
+      // Start trigger detection for CSV changes (every 2 minutes)
+      this.startTriggerDetection();
+      
       this.isInitialized = true;
       console.log('[BackgroundJobs] Background job processor initialized successfully');
     } catch (error) {
@@ -50,7 +55,7 @@ class BackgroundJobProcessor {
   }
 
   private startFileWatching() {
-    const watchPaths = ['data/calls', 'data/excel', 'data/xml'];
+    const watchPaths = ['data/calls', 'data/excel', 'data/xml', 'data'];
     
     console.log('[BackgroundJobs] Starting file watcher for:', watchPaths);
     
@@ -72,6 +77,12 @@ class BackgroundJobProcessor {
 
   private async processNewFile(filePath: string) {
     console.log(`[BackgroundJobs] Processing new/changed file: ${filePath}`);
+    
+    // Check if it's a CSV file that needs trigger detection
+    if (filePath.endsWith('.csv') && (filePath.includes('client_metrics') || filePath.includes('client_retention'))) {
+      console.log('[BackgroundJobs] CSV file detected, triggering analysis...');
+      await triggerDetectionService.processChangedFile(filePath);
+    }
     
     try {
       // Check if file was already processed
@@ -521,6 +532,31 @@ class BackgroundJobProcessor {
     }
   }
 
+  private startTriggerDetection() {
+    console.log('[BackgroundJobs] Starting trigger detection (every 2 minutes)');
+    
+    // Run immediately once
+    setTimeout(() => this.checkForTriggers(), 5000);
+    
+    // Then run every 2 minutes
+    this.triggerInterval = setInterval(async () => {
+      await this.checkForTriggers();
+    }, 2 * 60 * 1000); // 2 minutes
+  }
+
+  private async checkForTriggers() {
+    try {
+      console.log('[BackgroundJobs] Checking for CSV file changes...');
+      const changedFiles = await triggerDetectionService.checkForChanges();
+      
+      for (const filePath of changedFiles) {
+        await triggerDetectionService.processChangedFile(filePath);
+      }
+    } catch (error) {
+      console.error('[BackgroundJobs] Trigger detection error:', error);
+    }
+  }
+
   async shutdown() {
     console.log('[BackgroundJobs] Shutting down background job processor...');
     
@@ -534,6 +570,10 @@ class BackgroundJobProcessor {
     
     if (this.clusteringInterval) {
       clearInterval(this.clusteringInterval);
+    }
+    
+    if (this.triggerInterval) {
+      clearInterval(this.triggerInterval);
     }
     
     this.isInitialized = false;

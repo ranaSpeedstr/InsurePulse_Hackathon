@@ -1,6 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { alerts, email_notifications } from "../shared/schema";
+import { eq, desc } from "drizzle-orm";
+import { triggerDetectionService } from "./trigger-detection";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Analytics Routes
@@ -55,6 +59,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Alerts and notifications routes
+  app.get("/api/alerts", async (req, res) => {
+    try {
+      const alertsList = await db.select().from(alerts).orderBy(desc(alerts.detected_at));
+      res.json(alertsList);
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
+      res.status(500).json({ error: "Failed to fetch alerts" });
+    }
+  });
+
+  app.get("/api/alerts/:id", async (req, res) => {
+    try {
+      const [alert] = await db.select().from(alerts).where(eq(alerts.id, req.params.id));
+      if (!alert) {
+        return res.status(404).json({ error: "Alert not found" });
+      }
+      res.json(alert);
+    } catch (error) {
+      console.error("Error fetching alert:", error);
+      res.status(500).json({ error: "Failed to fetch alert" });
+    }
+  });
+
+  app.post("/api/alerts/:id/acknowledge", async (req, res) => {
+    try {
+      const { action } = req.body;
+      if (!action || !['Acknowledged', 'Resolved'].includes(action)) {
+        return res.status(400).json({ error: "Invalid action. Must be 'Acknowledged' or 'Resolved'" });
+      }
+
+      const success = await triggerDetectionService.acknowledgeAlert(req.params.id, action);
+      if (success) {
+        res.json({ message: `Alert ${action.toLowerCase()} successfully` });
+      } else {
+        res.status(404).json({ error: "Alert not found or failed to update" });
+      }
+    } catch (error) {
+      console.error("Error acknowledging alert:", error);
+      res.status(500).json({ error: "Failed to acknowledge alert" });
+    }
+  });
+
+  app.get("/api/email-notifications", async (req, res) => {
+    try {
+      const notifications = await db.select()
+        .from(email_notifications)
+        .orderBy(desc(email_notifications.sent_at));
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching email notifications:", error);
+      res.status(500).json({ error: "Failed to fetch email notifications" });
     }
   });
 
