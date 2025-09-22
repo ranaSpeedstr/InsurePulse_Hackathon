@@ -61,7 +61,7 @@ export default function AlertsTable({ alerts }: AlertsTableProps) {
                 <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center text-xs">
                   {alert.client.charAt(0)}
                 </div>
-                <span className="font-medium">{alert.client}</span>
+                <span className="font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">{alert.client}</span>
               </div>
               <div className="text-sm text-muted-foreground">{alert.trigger}</div>
               <div className="text-sm text-muted-foreground">{alert.date}</div>
