@@ -143,18 +143,26 @@ export class ForecastService {
     periodsAhead: number,
     metricName: string
   ): Promise<ForecastResult> {
-    const prompt = `You are an expert data scientist specializing in client relationship forecasting.
+    const prompt = `You are an expert AI forecasting specialist with advanced expertise in predictive client relationship analytics and future trend modeling.
 
-HISTORICAL DATA for ${metricName}:
+HISTORICAL DATA ANALYSIS for ${metricName}:
 ${historicalData.map(d => `${d.date}: ${d.value.toFixed(3)}`).join('\n')}
 
-TASK: Generate a ${periodsAhead}-period forecast for this ${metricName} time series.
+ADVANCED FORECASTING MISSION: Generate sophisticated ${periodsAhead}-period FUTURE TREND predictions for ${metricName} using cutting-edge predictive modeling techniques.
 
-ANALYSIS REQUIREMENTS:
-1. Identify trends, seasonality, and patterns in the historical data
-2. Predict the next ${periodsAhead} periods (months)
-3. Provide confidence level (0-1 scale)
-4. Generate actionable business insights
+PREDICTIVE ANALYSIS REQUIREMENTS:
+1. FUTURE-FOCUSED PREDICTION: Analyze historical patterns, momentum, cyclical behaviors, and emerging trends to project future trajectory
+2. ADVANCED TREND DETECTION: Identify micro-trends, acceleration/deceleration patterns, volatility patterns, and relationship lifecycle stages  
+3. PREDICTIVE CONFIDENCE SCORING: Provide granular confidence assessment based on data quality, pattern stability, and forecast horizon
+4. STRATEGIC BUSINESS INTELLIGENCE: Generate forward-looking actionable insights for proactive client relationship management
+
+ENHANCED FORECASTING CONSIDERATIONS:
+- Client relationship lifecycle patterns (honeymoon → maturity → potential decline → renewal cycles)
+- Seasonal business cycles and market dynamics
+- Leading indicators and early warning signals
+- Momentum analysis and trajectory prediction
+- Risk escalation patterns and intervention opportunities
+- Competitive landscape impact on client sentiment
 
 RESPONSE FORMAT (JSON):
 {
@@ -163,29 +171,29 @@ RESPONSE FORMAT (JSON):
     ...
   ],
   "confidence": number (0-1),
-  "insight": "Detailed analysis explaining the forecast, trends identified, and business implications. Focus on actionable insights for client relationship management."
+  "insight": "FUTURE-FOCUSED analysis providing: 1) Predicted trend direction and magnitude, 2) Key inflection points and risk periods, 3) Proactive intervention recommendations, 4) Strategic opportunities to capitalize on, 5) Early warning indicators to monitor. Focus on what WILL happen and actionable steps to influence positive outcomes."
 }
 
-CONTEXT:
-- Sentiment scores range from -1 (very negative) to +1 (very positive)
-- Churn probability ranges from 0% to 100%
-- Consider business cycles, seasonal effects, and relationship patterns
-- Provide specific recommendations for risk mitigation or opportunity capture`;
+PREDICTION CONTEXT:
+- Sentiment scores: -1 (very negative) to +1 (very positive) - predict emotional trajectory and relationship health evolution
+- Churn probability: 0% to 100% - forecast client retention risk and identify intervention windows
+- Focus on FUTURE TRENDS, not just historical pattern continuation
+- Emphasize predictive intelligence over descriptive analytics`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4-turbo',
       messages: [
         {
           role: 'system',
-          content: 'You are an expert data scientist and business analyst. Provide accurate, actionable forecasts based on time-series data. Always return valid JSON.'
+          content: 'You are an expert data scientist and business analyst specializing in predictive client relationship analytics. You excel at identifying subtle patterns, seasonal trends, and early warning signals in time-series data. Your forecasts are renowned for their accuracy and actionable business insights. Always return valid JSON with sophisticated trend analysis.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.3,
-      max_tokens: 2000,
+      temperature: 0.2,
+      max_tokens: 3000,
     });
 
     const content = response.choices[0]?.message?.content;

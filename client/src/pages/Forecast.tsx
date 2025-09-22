@@ -158,39 +158,47 @@ export default function Forecast() {
     generateForecastMutation.mutate({ type, periods });
   };
 
-  // Prepare chart data combining historical and forecast
+  // Prepare chart data emphasizing future predictions over historical context
   const prepareSentimentChartData = () => {
-    const historical = historicalData.map(d => ({
-      date: d.date,
-      historical: d.sentiment_score,
-      type: 'historical' as const
-    }));
+    // Only show recent historical data for context (last 4 weeks)
+    const recentHistorical = historicalData
+      .slice(-4) // Last 4 data points only
+      .map(d => ({
+        date: d.date,
+        historical_context: d.sentiment_score,
+        type: 'historical' as const
+      }));
 
-    const forecast = sentimentPredictions.map(p => ({
+    // Emphasize future predictions
+    const futurePredictions = sentimentPredictions.map(p => ({
       date: p.date,
-      forecast: p.value,
+      future_trend: p.value,
       confidence: p.confidence,
       type: 'forecast' as const
     }));
 
-    return [...historical, ...forecast].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return [...recentHistorical, ...futurePredictions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
   const prepareChurnChartData = () => {
-    const historical = historicalData.map(d => ({
-      date: d.date,
-      historical: d.churn_probability * 100, // Convert to percentage
-      type: 'historical' as const
-    }));
+    // Only show recent historical data for context (last 4 weeks)
+    const recentHistorical = historicalData
+      .slice(-4) // Last 4 data points only
+      .map(d => ({
+        date: d.date,
+        historical_context: d.churn_probability * 100, // Convert to percentage
+        type: 'historical' as const
+      }));
 
-    const forecast = churnPredictions.map(p => ({
+    // Emphasize future predictions
+    const futurePredictions = churnPredictions.map(p => ({
       date: p.date,
-      forecast: p.value * 100, // Convert to percentage
+      future_trend: p.value * 100, // Convert to percentage
       confidence: p.confidence,
       type: 'forecast' as const
     }));
 
-    return [...historical, ...forecast].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return [...recentHistorical, ...futurePredictions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   };
 
   // Get latest insights
@@ -304,7 +312,7 @@ export default function Forecast() {
                         Sentiment Trend Analysis
                       </CardTitle>
                       <CardDescription>
-                        Historical sentiment scores and 6-month AI-powered forecast
+                        AI-powered 6-month future sentiment trend predictions using GPT-4 Turbo
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
@@ -356,26 +364,27 @@ export default function Forecast() {
                             labelFormatter={(value) => new Date(value).toLocaleDateString()}
                             formatter={(value: any, name) => [
                               typeof value === 'number' ? value.toFixed(3) : value,
-                              name === 'historical' ? 'Historical' : 'Forecast'
+                              name === 'historical_context' ? 'Historical Context' : 'Future Trend'
                             ]}
                           />
                           <Legend />
                           <Line 
                             type="monotone" 
-                            dataKey="historical" 
-                            stroke="#22c55e" 
-                            strokeWidth={2}
-                            dot={{ fill: '#22c55e', strokeWidth: 2, r: 4 }}
-                            name="Historical Sentiment"
+                            dataKey="historical_context" 
+                            stroke="#94a3b8" 
+                            strokeWidth={1}
+                            strokeOpacity={0.6}
+                            dot={{ fill: '#94a3b8', strokeWidth: 1, r: 2 }}
+                            name="Historical Context"
                           />
                           <Line 
                             type="monotone" 
-                            dataKey="forecast" 
+                            dataKey="future_trend" 
                             stroke="#3b82f6" 
-                            strokeWidth={2}
+                            strokeWidth={4}
                             strokeDasharray="5 5"
-                            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                            name="Forecast"
+                            dot={{ fill: '#3b82f6', strokeWidth: 3, r: 6 }}
+                            name="AI Future Trend"
                           />
                         </LineChart>
                       </ResponsiveContainer>
@@ -393,7 +402,7 @@ export default function Forecast() {
                         Churn Risk Probability
                       </CardTitle>
                       <CardDescription>
-                        Historical churn risk and 2-quarter AI-powered forecast
+                        AI-powered 2-quarter future churn risk predictions using GPT-4 Turbo
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
@@ -445,26 +454,27 @@ export default function Forecast() {
                             labelFormatter={(value) => new Date(value).toLocaleDateString()}
                             formatter={(value: any, name) => [
                               typeof value === 'number' ? `${value.toFixed(1)}%` : value,
-                              name === 'historical' ? 'Historical' : 'Forecast'
+                              name === 'historical_context' ? 'Historical Context' : 'Future Trend'
                             ]}
                           />
                           <Legend />
                           <Line 
                             type="monotone" 
-                            dataKey="historical" 
-                            stroke="#ef4444" 
-                            strokeWidth={2}
-                            dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-                            name="Historical Churn Risk"
+                            dataKey="historical_context" 
+                            stroke="#94a3b8" 
+                            strokeWidth={1}
+                            strokeOpacity={0.6}
+                            dot={{ fill: '#94a3b8', strokeWidth: 1, r: 2 }}
+                            name="Historical Context"
                           />
                           <Line 
                             type="monotone" 
-                            dataKey="forecast" 
+                            dataKey="future_trend" 
                             stroke="#f97316" 
-                            strokeWidth={2}
+                            strokeWidth={4}
                             strokeDasharray="5 5"
-                            dot={{ fill: '#f97316', strokeWidth: 2, r: 4 }}
-                            name="Forecast"
+                            dot={{ fill: '#f97316', strokeWidth: 3, r: 6 }}
+                            name="AI Future Trend"
                           />
                         </LineChart>
                       </ResponsiveContainer>
