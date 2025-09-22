@@ -311,7 +311,7 @@ export default function SentimentChart({ data, metadata, isLoading = false }: Se
           
           <CardContent className="relative">
             <motion.div 
-              className="h-80"
+              className="h-64"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: prefersReducedMotion ? 0.01 : 0.5, delay: prefersReducedMotion ? 0 : 0.2 }}

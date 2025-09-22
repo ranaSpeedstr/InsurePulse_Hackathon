@@ -341,6 +341,59 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
               </ResponsiveContainer>
             </motion.div>
 
+            {/* Specific metric values display */}
+            <motion.div 
+              className="mt-6 pt-4 border-t border-border/50"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.5, delay: prefersReducedMotion ? 0 : 0.3 }}
+            >
+              <div className="flex justify-center gap-8 text-sm font-medium">
+                <motion.div
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: prefersReducedMotion ? 0.01 : 0.3, delay: prefersReducedMotion ? 0 : 0.4 }}
+                >
+                  <div 
+                    className="w-3 h-3 rounded"
+                    style={{
+                      background: `linear-gradient(135deg, ${METRIC_CONFIGS.nps.gradient.start}, ${METRIC_CONFIGS.nps.gradient.end})`
+                    }}
+                  />
+                  <span className="text-muted-foreground">NPS : 90</span>
+                </motion.div>
+                <motion.div
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: prefersReducedMotion ? 0.01 : 0.3, delay: prefersReducedMotion ? 0 : 0.5 }}
+                >
+                  <div 
+                    className="w-3 h-3 rounded"
+                    style={{
+                      background: `linear-gradient(135deg, ${METRIC_CONFIGS.retention.gradient.start}, ${METRIC_CONFIGS.retention.gradient.end})`
+                    }}
+                  />
+                  <span className="text-muted-foreground">Retention : 60</span>
+                </motion.div>
+                <motion.div
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: prefersReducedMotion ? 0.01 : 0.3, delay: prefersReducedMotion ? 0 : 0.6 }}
+                >
+                  <div 
+                    className="w-3 h-3 rounded"
+                    style={{
+                      background: `linear-gradient(135deg, ${METRIC_CONFIGS.supportScore.gradient.start}, ${METRIC_CONFIGS.supportScore.gradient.end})`
+                    }}
+                  />
+                  <span className="text-muted-foreground">Support Score : 81</span>
+                </motion.div>
+              </div>
+            </motion.div>
+
             {/* Glow effect overlay for hovered client */}
             {hoveredClient && !prefersReducedMotion && (
               <motion.div
