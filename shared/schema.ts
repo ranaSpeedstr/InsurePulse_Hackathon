@@ -176,6 +176,52 @@ export const insertEmailNotificationSchema = createInsertSchema(email_notificati
   created_at: true,
 });
 
+// Time-series data tables for forecasting
+export const client_time_series = pgTable("client_time_series", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  client_id: varchar("client_id").notNull().references(() => clients.client_id),
+  date: timestamp("date").notNull(),
+  sentiment_score: real("sentiment_score"), // Daily/weekly sentiment average
+  churn_probability: real("churn_probability"), // Churn risk percentage
+  satisfaction_score: real("satisfaction_score"), // Customer satisfaction score
+  issue_count: integer("issue_count").default(0), // Number of issues/tickets
+  escalation_count: integer("escalation_count").default(0), // Number of escalations
+  response_time_hours: real("response_time_hours"), // Average response time
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    // Ensure unique date per client
+    unique_client_date: unique().on(table.client_id, table.date),
+  };
+});
+
+export const forecast_predictions = pgTable("forecast_predictions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  client_id: varchar("client_id").notNull().references(() => clients.client_id),
+  forecast_type: text("forecast_type").notNull(), // "sentiment" or "churn_risk"
+  forecast_date: timestamp("forecast_date").notNull(), // Date this forecast is for
+  predicted_value: real("predicted_value").notNull(), // Predicted sentiment or churn %
+  confidence_score: real("confidence_score"), // Confidence in prediction (0-1)
+  openai_analysis: text("openai_analysis"), // AI interpretation/insights
+  data_points_used: integer("data_points_used"), // Number of historical points used
+  created_at: timestamp("created_at").defaultNow(),
+}, (table) => {
+  return {
+    // Ensure unique forecast per client/type/date
+    unique_forecast: unique().on(table.client_id, table.forecast_type, table.forecast_date),
+  };
+});
+
+export const insertClientTimeSeriesSchema = createInsertSchema(client_time_series).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertForecastPredictionSchema = createInsertSchema(forecast_predictions).omit({
+  id: true,
+  created_at: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertClient = z.infer<typeof insertClientSchema>;
@@ -196,3 +242,7 @@ export type InsertAlert = z.infer<typeof insertAlertSchema>;
 export type Alert = typeof alerts.$inferSelect;
 export type InsertEmailNotification = z.infer<typeof insertEmailNotificationSchema>;
 export type EmailNotification = typeof email_notifications.$inferSelect;
+export type InsertClientTimeSeries = z.infer<typeof insertClientTimeSeriesSchema>;
+export type ClientTimeSeries = typeof client_time_series.$inferSelect;
+export type InsertForecastPrediction = z.infer<typeof insertForecastPredictionSchema>;
+export type ForecastPrediction = typeof forecast_predictions.$inferSelect;
