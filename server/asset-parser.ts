@@ -36,6 +36,14 @@ export interface ClientMetrics {
   supportScore: number;
 }
 
+export interface ClientRetention {
+  clientId: string;
+  renewalRatePercent: number;
+  policyLapseCount: number;
+  competitorQuotesRequested: number;
+  riskScore: number;
+}
+
 export class AssetParser {
   private assetsPath = path.join(process.cwd(), 'attached_assets');
 
@@ -224,25 +232,79 @@ export class AssetParser {
   }
 
   /**
+   * Parse CSV retention files
+   */
+  async parseClientRetention(): Promise<Record<string, ClientRetention>> {
+    const retentionData: Record<string, ClientRetention> = {};
+    
+    try {
+      const files = fs.readdirSync(this.assetsPath);
+      const csvFiles = files.filter(file => file.endsWith('.csv') && file.includes('retention'));
+      
+      for (const file of csvFiles) {
+        try {
+          const filePath = path.join(this.assetsPath, file);
+          const csvContent = fs.readFileSync(filePath, 'utf-8');
+          const lines = csvContent.split('\n');
+          
+          if (lines.length < 2) continue;
+          
+          // Parse header - expected: Client_ID,Renewal Rate (%),Policy Lapse Count,Competitor Quotes Requested,Risk Score
+          const headers = lines[0].split(',').map(h => h.trim().replace(/\uFEFF/g, '')); // Remove BOM
+          
+          // Parse data rows
+          for (let i = 1; i < lines.length; i++) {
+            const row = lines[i].trim();
+            if (!row) continue;
+            
+            const values = row.split(',').map(v => v.trim());
+            if (values.length < headers.length) continue;
+            
+            const clientId = values[0];
+            if (clientId) {
+              retentionData[clientId] = {
+                clientId: clientId,
+                renewalRatePercent: parseInt(values[1]) || 0,
+                policyLapseCount: parseInt(values[2]) || 0,
+                competitorQuotesRequested: parseInt(values[3]) || 0,
+                riskScore: parseInt(values[4]) || 0
+              };
+            }
+          }
+        } catch (error) {
+          console.error(`Error parsing retention CSV file ${file}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error reading retention CSV files:', error);
+    }
+    
+    return retentionData;
+  }
+
+  /**
    * Parse all asset files and return combined data
    */
   async parseAllAssets(): Promise<{
     profiles: Record<string, ClientProfile>;
     feedback: Record<string, FeedbackEntry[]>;
     metrics: Record<string, ClientMetrics>;
+    retention: Record<string, ClientRetention>;
   }> {
-    const [profiles, feedback, metrics] = await Promise.all([
+    const [profiles, feedback, metrics, retention] = await Promise.all([
       this.parseClientProfiles(),
       this.parseFeedbackData(),
-      this.parseMetricsData()
+      this.parseMetricsData(),
+      this.parseClientRetention()
     ]);
 
     console.log('[AssetParser] Parsed data summary:');
     console.log(`- Profiles: ${Object.keys(profiles).length} clients`);
     console.log(`- Feedback: ${Object.keys(feedback).length} clients`);
     console.log(`- Metrics: ${Object.keys(metrics).length} clients`);
+    console.log(`- Retention: ${Object.keys(retention).length} clients`);
 
-    return { profiles, feedback, metrics };
+    return { profiles, feedback, metrics, retention };
   }
 }
 

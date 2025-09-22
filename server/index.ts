@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { backgroundJobProcessor } from "./background-jobs";
 import { assetWatcher } from "./asset-watcher";
+import { alertAnalysisService } from "./alert-analysis-service";
 
 const app = express();
 app.use(express.json());
@@ -82,6 +83,23 @@ app.use((req, res, next) => {
     try {
       await assetWatcher.start();
       log('Asset watcher started successfully');
+      
+      // Set up alert analysis when database is updated
+      assetWatcher.on('databaseUpdated', async (data) => {
+        try {
+          log('Database updated, triggering alert analysis...');
+          const alertsGenerated = await alertAnalysisService.analyzeClientMetrics();
+          if (alertsGenerated > 0) {
+            log(`Alert analysis complete: ${alertsGenerated} new alerts generated`);
+          } else {
+            log('Alert analysis complete: no new alerts generated');
+          }
+        } catch (error) {
+          log('Alert analysis failed:', String(error));
+        }
+      });
+      
+      log('Alert analysis service integrated with asset watcher');
     } catch (error) {
       log('Failed to start asset watcher:', String(error));
     }

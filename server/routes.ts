@@ -8,6 +8,7 @@ import { triggerDetectionService } from "./trigger-detection";
 import { forecastService } from "./forecast-service";
 import { clientInsightsService } from "./client-insights-service";
 import { assetWatcher } from "./asset-watcher";
+import { alertAnalysisService } from "./alert-analysis-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard Analytics Routes
@@ -163,6 +164,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Alerts and notifications routes
+  
+  // Alert Analysis Routes (must come BEFORE /api/alerts/:id to avoid route conflicts)
+  app.post("/api/alerts/analyze", async (req, res) => {
+    try {
+      console.log("[Routes] Triggering manual alert analysis...");
+      const alertsGenerated = await alertAnalysisService.analyzeClientMetrics();
+      const stats = await alertAnalysisService.getAlertStats();
+      
+      res.json({ 
+        message: "Alert analysis completed successfully",
+        alertsGenerated,
+        currentStats: stats
+      });
+    } catch (error) {
+      console.error("Error during alert analysis:", error);
+      res.status(500).json({ error: "Failed to analyze alerts" });
+    }
+  });
+
+  app.get("/api/alerts/stats", async (req, res) => {
+    try {
+      const stats = await alertAnalysisService.getAlertStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching alert stats:", error);
+      res.status(500).json({ error: "Failed to fetch alert stats" });
+    }
+  });
+
   app.get("/api/alerts", async (req, res) => {
     try {
       const alertsList = await db.select().from(alerts).orderBy(desc(alerts.detected_at));
