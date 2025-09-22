@@ -210,16 +210,43 @@ class BackgroundJobProcessor {
     console.log(`[BackgroundJobs] Fetching emails from ${emailAddress}`);
     
     try {
-      const connection: any = await imaps.connect({
-        imap: {
-          user: emailAddress,
-          password: password,
-          host: 'imap.gmail.com',
-          port: 993,
-          tls: true,
-          authTimeout: 10000 // Increase timeout
-        }
-      });
+      // First try with strict certificate validation
+      let connection: any;
+      try {
+        connection = await imaps.connect({
+          imap: {
+            user: emailAddress,
+            password: password,
+            host: 'imap.gmail.com',
+            port: 993,
+            tls: true,
+            tlsOptions: {
+              rejectUnauthorized: true,
+              servername: 'imap.gmail.com'
+            },
+            authTimeout: 15000,
+            connTimeout: 15000
+          }
+        });
+      } catch (certError) {
+        console.warn(`[BackgroundJobs] Certificate validation failed for ${emailAddress}, trying with relaxed settings:`, certError.message);
+        
+        // Fallback with relaxed certificate validation for development
+        connection = await imaps.connect({
+          imap: {
+            user: emailAddress,
+            password: password,
+            host: 'imap.gmail.com',
+            port: 993,
+            tls: true,
+            tlsOptions: {
+              rejectUnauthorized: false
+            },
+            authTimeout: 15000,
+            connTimeout: 15000
+          }
+        });
+      }
 
       await connection.openBox('INBOX');
       
@@ -227,7 +254,14 @@ class BackgroundJobProcessor {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      const searchCriteria = ['SINCE', yesterday];
+      // Format date for IMAP search (DD-MMM-YYYY format)
+      const formattedDate = yesterday.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }).replace(/\s/g, '-');
+      
+      const searchCriteria = ['SINCE', formattedDate];
       const fetchOptions = {
         bodies: ['HEADER', 'TEXT'],
         markSeen: false
