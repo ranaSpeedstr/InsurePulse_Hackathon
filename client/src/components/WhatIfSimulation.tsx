@@ -16,6 +16,9 @@ interface SimulationResult {
 
 interface WhatIfSimulationProps {
   onSimulate?: (params: SimulationParams) => void;
+  selectedClientId?: string;
+  clientProfile?: any;
+  clientMetrics?: any;
 }
 
 interface SimulationParams {
@@ -26,13 +29,40 @@ interface SimulationParams {
   issueResolution: number;
 }
 
-export default function WhatIfSimulation({ onSimulate }: WhatIfSimulationProps) {
-  // Simulation parameters - realistic ranges based on business metrics
-  const [responseTime, setResponseTime] = useState([24]); // hours
-  const [supportScore, setSupportScore] = useState([75]); // 0-100
-  const [escalationRate, setEscalationRate] = useState([15]); // percentage
-  const [communicationFreq, setCommunicationFreq] = useState([2]); // times per week
-  const [issueResolution, setIssueResolution] = useState([85]); // percentage
+export default function WhatIfSimulation({ onSimulate, selectedClientId, clientProfile, clientMetrics }: WhatIfSimulationProps) {
+  // Initialize simulation parameters based on actual client data
+  const getInitialValues = () => {
+    if (clientMetrics) {
+      return {
+        responseTime: clientMetrics.avgResponseDays ? Math.round(clientMetrics.avgResponseDays * 24) : 24,
+        supportScore: clientMetrics.supportScore || 75,
+        escalationRate: clientMetrics.escalations ? Math.min(50, clientMetrics.escalations * 2) : 15,
+        communicationFreq: 2, // Default as this isn't tracked in current metrics
+        issueResolution: clientMetrics.delivered && clientMetrics.backlog ? 
+          Math.round((clientMetrics.delivered / (clientMetrics.delivered + clientMetrics.backlog)) * 100) : 85
+      };
+    }
+    return { responseTime: 24, supportScore: 75, escalationRate: 15, communicationFreq: 2, issueResolution: 85 };
+  };
+
+  const initialValues = getInitialValues();
+  
+  // Simulation parameters - initialized with client's actual data
+  const [responseTime, setResponseTime] = useState([initialValues.responseTime]); // hours
+  const [supportScore, setSupportScore] = useState([initialValues.supportScore]); // 0-100
+  const [escalationRate, setEscalationRate] = useState([initialValues.escalationRate]); // percentage
+  const [communicationFreq, setCommunicationFreq] = useState([initialValues.communicationFreq]); // times per week
+  const [issueResolution, setIssueResolution] = useState([initialValues.issueResolution]); // percentage
+
+  // Reset parameters when client changes
+  useEffect(() => {
+    const values = getInitialValues();
+    setResponseTime([values.responseTime]);
+    setSupportScore([values.supportScore]);
+    setEscalationRate([values.escalationRate]);
+    setCommunicationFreq([values.communicationFreq]);
+    setIssueResolution([values.issueResolution]);
+  }, [selectedClientId, clientMetrics]);
   
   const [results, setResults] = useState<SimulationResult>({
     churnRisk: 25,
@@ -46,11 +76,42 @@ export default function WhatIfSimulation({ onSimulate }: WhatIfSimulationProps) 
   const calculateMetrics = (params: SimulationParams) => {
     // Sophisticated simulation algorithm based on real business factors
     
-    // Base scores - starting point for calculations
-    let baseChurnRisk = 30;
-    let baseRetention = 85;
-    let baseHealth = 70;
-    let baseSatisfaction = 70;
+    // Use actual client data as baseline, with fallbacks for missing data
+    let baseChurnRisk = 30; // Default fallback
+    let baseRetention = 85; // Default fallback
+    let baseHealth = clientProfile?.healthScore || 70;
+    let baseSatisfaction = clientMetrics?.supportScore || 70;
+    
+    // Calculate baseline churn risk from client profile risk flag
+    if (clientProfile?.riskFlag === 'High') {
+      baseChurnRisk = 60;
+      baseRetention = 70;
+    } else if (clientProfile?.riskFlag === 'Medium') {
+      baseChurnRisk = 35;
+      baseRetention = 80;
+    } else if (clientProfile?.riskFlag === 'Low') {
+      baseChurnRisk = 15;
+      baseRetention = 90;
+    }
+    
+    // Adjust baseline based on actual client metrics
+    if (clientMetrics) {
+      // Use actual average response time
+      const actualResponseTime = clientMetrics.avgResponseDays ? clientMetrics.avgResponseDays * 24 : 24; // Convert to hours
+      baseChurnRisk += Math.max(0, (actualResponseTime - 24) / 24) * 10; // Penalty for slow response
+      
+      // Use actual escalation data
+      if (clientMetrics.escalations > 5) {
+        baseChurnRisk += 10;
+        baseRetention -= 5;
+      }
+      
+      // Use backlog as indicator
+      if (clientMetrics.backlog > 3) {
+        baseChurnRisk += 5;
+        baseSatisfaction -= 10;
+      }
+    }
     
     // Response time impact (lower is better)
     const responseImpact = Math.max(0, (48 - params.responseTime) / 48);
@@ -128,9 +189,28 @@ export default function WhatIfSimulation({ onSimulate }: WhatIfSimulationProps) 
     }
   }, [responseTime[0], supportScore[0], escalationRate[0], communicationFreq[0], issueResolution[0]]);
 
+  // Calculate current client metrics for comparison
+  const getCurrentMetrics = () => {
+    if (clientProfile && clientMetrics) {
+      // Use actual client data to calculate current state
+      const currentParams = {
+        responseTime: clientMetrics.avgResponseDays ? clientMetrics.avgResponseDays * 24 : 48,
+        supportScore: clientMetrics.supportScore || 75,
+        escalationRate: clientMetrics.escalations ? Math.min(50, clientMetrics.escalations * 2) : 15,
+        communicationFreq: 2,
+        issueResolution: clientMetrics.delivered && clientMetrics.backlog ? 
+          Math.round((clientMetrics.delivered / (clientMetrics.delivered + clientMetrics.backlog)) * 100) : 85
+      };
+      return calculateMetrics(currentParams);
+    }
+    return { churnRisk: 35, retentionRate: 80 }; // Default fallback
+  };
+
+  const currentMetrics = getCurrentMetrics();
+
   // Create chart data for visualizations
   const comparisonData = [
-    { name: 'Current', churnRisk: 35, retention: 80 },
+    { name: 'Current', churnRisk: currentMetrics.churnRisk, retention: currentMetrics.retentionRate },
     { name: 'Simulated', churnRisk: results.churnRisk, retention: results.retentionRate }
   ];
 
@@ -154,8 +234,45 @@ export default function WhatIfSimulation({ onSimulate }: WhatIfSimulationProps) 
     }
   };
 
+  // Reset function to restore actual client values
+  const resetToActualValues = () => {
+    const values = getInitialValues();
+    setResponseTime([values.responseTime]);
+    setSupportScore([values.supportScore]);
+    setEscalationRate([values.escalationRate]);
+    setCommunicationFreq([values.communicationFreq]);
+    setIssueResolution([values.issueResolution]);
+  };
+
   return (
     <div className="space-y-6" data-testid="what-if-simulation">
+      {/* Header with client info */}
+      {selectedClientId && clientProfile ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Simulating: {clientProfile.name}
+            </CardTitle>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Industry: {clientProfile.industry} | Status: {clientProfile.status}
+              </p>
+              {clientMetrics && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={resetToActualValues}
+                  data-testid="button-reset-simulation"
+                >
+                  Reset to Current Values
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+        </Card>
+      ) : null}
+      
       {/* Parameters Card */}
       <Card>
         <CardHeader>
