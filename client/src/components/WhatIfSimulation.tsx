@@ -121,8 +121,12 @@ export default function WhatIfSimulation({ onSimulate }: WhatIfSimulationProps) 
     
     const newResults = calculateMetrics(params);
     setResults(newResults);
-    onSimulate?.(params);
-  }, [responseTime, supportScore, escalationRate, communicationFreq, issueResolution, onSimulate]);
+    
+    // Only call onSimulate if it exists, without adding it to dependencies
+    if (onSimulate) {
+      onSimulate(params);
+    }
+  }, [responseTime[0], supportScore[0], escalationRate[0], communicationFreq[0], issueResolution[0]]);
 
   // Create chart data for visualizations
   const comparisonData = [
