@@ -13,15 +13,6 @@ export default function Clients() {
   const [location] = useLocation();
   const { toast } = useToast();
 
-  // Check URL parameters for selected client
-  useEffect(() => {
-    const params = new URLSearchParams(location.split('?')[1] || '');
-    const selectedFromUrl = params.get('selected');
-    if (selectedFromUrl) {
-      setSelectedClient(selectedFromUrl);
-    }
-  }, [location]);
-
   // Fetch client profiles from assets
   const { data: clientProfiles = {}, isLoading: profilesLoading, refetch: refetchProfiles } = useQuery({
     queryKey: ['/api/assets/profiles'],
@@ -46,14 +37,19 @@ export default function Clients() {
     name: profile.name || `${profile.primaryContact} Company`
   }));
 
-  // Set default selected client when data loads (only if no client selected from URL)
+  // Handle client selection: URL parameter takes priority, then default to first client
   useEffect(() => {
     const params = new URLSearchParams(location.split('?')[1] || '');
     const selectedFromUrl = params.get('selected');
-    if (clients.length > 0 && !selectedClient && !selectedFromUrl) {
+    
+    if (selectedFromUrl) {
+      // URL parameter takes priority
+      setSelectedClient(selectedFromUrl);
+    } else if (clients.length > 0 && !selectedClient) {
+      // Only set default if no client is selected and no URL parameter
       setSelectedClient(clients[0].id);
     }
-  }, [clients, selectedClient, location]);
+  }, [clients, location]);
 
   // Transform metrics data to match component expectations
   const transformMetricsData = (rawMetrics: any) => {
