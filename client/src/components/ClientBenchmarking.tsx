@@ -181,6 +181,7 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
   const prefersReducedMotion = useReducedMotion();
   const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
+
   if (isLoading) {
     return <ClientBenchmarkingSkeleton />;
   }
@@ -303,45 +304,39 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
                     )}
                   />
                   
-                  <motion.g
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: prefersReducedMotion ? 0.01 : 0.8, delay: prefersReducedMotion ? 0 : 0.3 }}
-                  >
-                    <Bar 
-                      dataKey="nps" 
-                      fill={`url(#gradient-nps-${instanceId})`} 
-                      name="NPS" 
-                      radius={[4, 4, 0, 0]}
-                      animationBegin={prefersReducedMotion ? 0 : 100}
-                      animationDuration={prefersReducedMotion ? 0 : 800}
-                      animationEasing="ease-out"
-                      role="presentation"
-                      aria-label="NPS scores by client"
-                    />
-                    <Bar 
-                      dataKey="retention" 
-                      fill={`url(#gradient-retention-${instanceId})`} 
-                      name="Retention" 
-                      radius={[4, 4, 0, 0]}
-                      animationBegin={prefersReducedMotion ? 0 : 200}
-                      animationDuration={prefersReducedMotion ? 0 : 800}
-                      animationEasing="ease-out"
-                      role="presentation"
-                      aria-label="Retention rates by client"
-                    />
-                    <Bar 
-                      dataKey="supportScore" 
-                      fill={`url(#gradient-supportScore-${instanceId})`} 
-                      name="Support Score" 
-                      radius={[4, 4, 0, 0]}
-                      animationBegin={prefersReducedMotion ? 0 : 300}
-                      animationDuration={prefersReducedMotion ? 0 : 800}
-                      animationEasing="ease-out"
-                      role="presentation"
-                      aria-label="Support scores by client"
-                    />
-                  </motion.g>
+                  <Bar 
+                    dataKey="nps" 
+                    fill={`url(#gradient-nps-${instanceId})`} 
+                    name="NPS" 
+                    radius={[4, 4, 0, 0]}
+                    animationBegin={prefersReducedMotion ? 0 : 100}
+                    animationDuration={prefersReducedMotion ? 0 : 800}
+                    animationEasing="ease-out"
+                    role="presentation"
+                    aria-label="NPS scores by client"
+                  />
+                  <Bar 
+                    dataKey="retention" 
+                    fill={`url(#gradient-retention-${instanceId})`} 
+                    name="Retention" 
+                    radius={[4, 4, 0, 0]}
+                    animationBegin={prefersReducedMotion ? 0 : 200}
+                    animationDuration={prefersReducedMotion ? 0 : 800}
+                    animationEasing="ease-out"
+                    role="presentation"
+                    aria-label="Retention rates by client"
+                  />
+                  <Bar 
+                    dataKey="supportScore" 
+                    fill={`url(#gradient-supportScore-${instanceId})`} 
+                    name="Support Score" 
+                    radius={[4, 4, 0, 0]}
+                    animationBegin={prefersReducedMotion ? 0 : 300}
+                    animationDuration={prefersReducedMotion ? 0 : 800}
+                    animationEasing="ease-out"
+                    role="presentation"
+                    aria-label="Support scores by client"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </motion.div>
