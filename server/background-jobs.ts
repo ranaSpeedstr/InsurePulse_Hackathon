@@ -170,19 +170,19 @@ class BackgroundJobProcessor {
   }
 
   private startEmailFetching() {
-    console.log('[BackgroundJobs] Starting email fetching (every 5 minutes)');
+    console.log('[BackgroundJobs] Email fetching temporarily disabled due to IMAP issues');
     
-    // Fetch emails immediately, then every 5 minutes
-    this.fetchEmails();
-    this.emailInterval = setInterval(() => this.fetchEmails(), 5 * 60 * 1000);
+    // TODO: Re-enable once IMAP search issue is resolved
+    // this.fetchEmails();
+    // this.emailInterval = setInterval(() => this.fetchEmails(), 15 * 60 * 1000);
   }
 
   private startClustering() {
-    console.log('[BackgroundJobs] Starting clustering analysis (every 30 minutes)');
+    console.log('[BackgroundJobs] Starting clustering analysis (every 60 minutes)');
     
     // Run clustering immediately, then every 30 minutes
     this.performClustering();
-    this.clusteringInterval = setInterval(() => this.performClustering(), 30 * 60 * 1000);
+    this.clusteringInterval = setInterval(() => this.performClustering(), 60 * 60 * 1000); // 60 minutes
   }
 
   private async fetchEmails() {
@@ -231,12 +231,14 @@ class BackgroundJobProcessor {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       
-      // Format date for IMAP search (DD-MMM-YYYY format)
-      const formattedDate = yesterday.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      }).replace(/\s/g, '-');
+      // Format date for IMAP search (proper IMAP date format)
+      // IMAP requires format: DD-Mon-YYYY (e.g., "01-Jan-2023")
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = yesterday.getDate().toString().padStart(2, '0');
+      const month = monthNames[yesterday.getMonth()];
+      const year = yesterday.getFullYear();
+      const formattedDate = `${day}-${month}-${year}`;
       
       const searchCriteria = ['SINCE', formattedDate];
       const fetchOptions = {
@@ -567,7 +569,7 @@ class BackgroundJobProcessor {
     // Then run every 2 minutes
     this.triggerInterval = setInterval(async () => {
       await this.checkForTriggers();
-    }, 2 * 60 * 1000); // 2 minutes
+    }, 5 * 60 * 1000); // 5 minutes
   }
 
   private async checkForTriggers() {

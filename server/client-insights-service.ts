@@ -17,6 +17,54 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Cache interface for storing insights with TTL
+interface CacheEntry {
+  insights: ClientInsights;
+  timestamp: number;
+  ttl: number; // Time to live in milliseconds
+}
+
+// In-memory cache for client insights
+class InsightsCache {
+  private cache = new Map<string, CacheEntry>();
+  private readonly DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes
+
+  set(clientId: string, insights: ClientInsights, ttl = this.DEFAULT_TTL): void {
+    this.cache.set(clientId, {
+      insights,
+      timestamp: Date.now(),
+      ttl
+    });
+  }
+
+  get(clientId: string): ClientInsights | null {
+    const entry = this.cache.get(clientId);
+    if (!entry) return null;
+
+    // Check if expired
+    if (Date.now() - entry.timestamp > entry.ttl) {
+      this.cache.delete(clientId);
+      return null;
+    }
+
+    return entry.insights;
+  }
+
+  clear(clientId?: string): void {
+    if (clientId) {
+      this.cache.delete(clientId);
+    } else {
+      this.cache.clear();
+    }
+  }
+
+  size(): number {
+    return this.cache.size;
+  }
+}
+
+const insightsCache = new InsightsCache();
+
 export interface ClientDataSnapshot {
   profile: any;
   metrics: any;
@@ -31,10 +79,34 @@ export interface ClientDataSnapshot {
 export class ClientInsightsService {
 
   /**
+   * Clear cached insights for a client (useful when client data is updated)
+   */
+  public clearCache(clientId?: string): void {
+    insightsCache.clear(clientId);
+    console.log(`[ClientInsights] Cache cleared ${clientId ? `for client ${clientId}` : 'for all clients'}`);
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public getCacheStats(): { size: number } {
+    return { size: insightsCache.size() };
+  }
+
+  /**
    * Generate comprehensive AI insights for a specific client
    */
-  public async generateClientInsights(clientId: string): Promise<ClientInsights> {
+  public async generateClientInsights(clientId: string, forceRefresh = false): Promise<ClientInsights> {
     try {
+      // Check cache first unless force refresh is requested
+      if (!forceRefresh) {
+        const cachedInsights = insightsCache.get(clientId);
+        if (cachedInsights) {
+          console.log(`[ClientInsights] Returning cached insights for client ${clientId}`);
+          return cachedInsights;
+        }
+      }
+
       // Aggregate all available client data
       const clientData = await this.aggregateClientData(clientId);
       
@@ -45,9 +117,21 @@ export class ClientInsightsService {
       // Generate insights using OpenAI GPT-4
       const aiInsights = await this.analyzeWithOpenAI(clientId, clientData);
       
+      // Cache the results for future requests
+      insightsCache.set(clientId, aiInsights);
+      console.log(`[ClientInsights] Cached insights for client ${clientId}, cache size: ${insightsCache.size()}`);
+      
       return aiInsights;
     } catch (error) {
       console.error(`[ClientInsights] Error generating insights for client ${clientId}:`, error);
+      
+      // Check if we have cached insights as fallback during API failures
+      const cachedInsights = insightsCache.get(clientId);
+      if (cachedInsights) {
+        console.log(`[ClientInsights] Returning cached insights as fallback for client ${clientId}`);
+        return cachedInsights;
+      }
+      
       throw error;
     }
   }

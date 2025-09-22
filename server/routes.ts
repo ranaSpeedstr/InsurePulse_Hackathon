@@ -77,23 +77,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/clients/:id/insights", async (req, res) => {
+    const clientId = req.params.id;
+    const forceRefresh = req.query.forceRefresh === 'true';
+    
     try {
-      const clientId = req.params.id;
-      console.log(`[Routes] Generating insights for client ${clientId}`);
+      console.log(`[Routes] Generating insights for client ${clientId}${forceRefresh ? ' (force refresh)' : ''}`);
       
-      const insights = await clientInsightsService.generateClientInsights(clientId);
+      // Set a timeout for the entire request (30 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout - insights generation took too long')), 30000);
+      });
+      
+      // Race between the actual insights generation and timeout
+      const insightsPromise = clientInsightsService.generateClientInsights(clientId, forceRefresh);
+      const insights = await Promise.race([insightsPromise, timeoutPromise]);
+      
       res.json(insights);
     } catch (error) {
-      console.error("Error generating client insights:", error);
+      console.error(`[Routes] Error generating client insights for ${clientId}:`, error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
       if (errorMessage.includes('not found')) {
-        res.status(404).json({ error: `Client ${req.params.id} not found` });
+        res.status(404).json({ error: `Client ${clientId} not found` });
+      } else if (errorMessage.includes('timeout')) {
+        res.status(408).json({ 
+          error: "Request timeout",
+          message: "Insights generation is taking longer than expected. Please try again in a few minutes or check if OpenAI service is available.",
+          clientId
+        });
+      } else if (errorMessage.includes('quota') || errorMessage.includes('429')) {
+        res.status(429).json({ 
+          error: "API quota exceeded",
+          message: "OpenAI API quota has been exceeded. Please check your OpenAI account billing or try again later.",
+          clientId
+        });
       } else {
         res.status(500).json({ 
           error: "Failed to generate client insights",
-          details: errorMessage
+          details: errorMessage,
+          clientId
         });
       }
     }
