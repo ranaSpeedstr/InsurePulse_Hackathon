@@ -76,6 +76,29 @@
   --chart-4: 0 84% 60%;
   --chart-5: 280 65% 60%;
 
+  /* Chart gradient colors for enhanced visuals */
+  --chart-gradient-1-start: 210 100% 50%;
+  --chart-gradient-1-end: 210 100% 35%;
+  --chart-gradient-2-start: 142 76% 45%;
+  --chart-gradient-2-end: 142 76% 28%;
+  --chart-gradient-3-start: 45 93% 55%;
+  --chart-gradient-3-end: 45 93% 40%;
+  --chart-gradient-4-start: 0 84% 65%;
+  --chart-gradient-4-end: 0 84% 45%;
+  --chart-gradient-5-start: 280 65% 65%;
+  --chart-gradient-5-end: 280 65% 45%;
+
+  /* Chart glow effects */
+  --chart-glow-1: 210 100% 50%;
+  --chart-glow-2: 142 76% 45%;
+  --chart-glow-3: 45 93% 55%;
+  --chart-glow-4: 0 84% 65%;
+  --chart-glow-5: 280 65% 65%;
+
+  /* Chart container backgrounds */
+  --chart-container-bg: 0 0% 97%;
+  --chart-container-border: 220 13% 90%;
+
   /* Gradient colors for MetricCard backgrounds */
   --metric-gradient-start: 0 0% 97%;
   --metric-gradient-end: 220 8% 94%;

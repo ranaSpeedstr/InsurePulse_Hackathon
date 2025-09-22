@@ -1,5 +1,8 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 
 interface ForecastData {
   month: string;
@@ -12,55 +15,438 @@ interface ForecastData {
 interface ForecastChartProps {
   data: ForecastData[];
   type: "sentiment" | "churn";
+  isLoading?: boolean;
 }
 
-export default function ForecastChart({ data, type }: ForecastChartProps) {
+const LINE_CONFIGS = {
+  sentiment: {
+    positive: {
+      stroke: "hsl(var(--chart-2))",
+      gradient: {
+        start: "hsl(var(--chart-gradient-2-start))",
+        end: "hsl(var(--chart-gradient-2-end))"
+      },
+      glow: "hsl(var(--chart-glow-2) / 0.5)"
+    },
+    neutral: {
+      stroke: "hsl(var(--chart-3))",
+      gradient: {
+        start: "hsl(var(--chart-gradient-3-start))",
+        end: "hsl(var(--chart-gradient-3-end))"
+      },
+      glow: "hsl(var(--chart-glow-3) / 0.5)"
+    },
+    negative: {
+      stroke: "hsl(var(--chart-4))",
+      gradient: {
+        start: "hsl(var(--chart-gradient-4-start))",
+        end: "hsl(var(--chart-gradient-4-end))"
+      },
+      glow: "hsl(var(--chart-glow-4) / 0.5)"
+    }
+  },
+  churn: {
+    churnProbability: {
+      stroke: "hsl(var(--chart-4))",
+      gradient: {
+        start: "hsl(var(--chart-gradient-4-start))",
+        end: "hsl(var(--chart-gradient-4-end))"
+      },
+      glow: "hsl(var(--chart-glow-4) / 0.5)"
+    }
+  }
+};
+
+// Loading skeleton for the chart
+function ForecastChartSkeleton({ type }: { type: "sentiment" | "churn" }) {
   const title = type === "sentiment" ? "Sentiment Forecast" : "Churn Risk Probability Trend";
   
   return (
-    <Card data-testid={`card-forecast-${type}`}>
+    <Card className="relative overflow-hidden" data-testid={`card-forecast-${type}-skeleton`}>
+      <motion.div
+        className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
+        animate={{ x: ["0%", "100%"] }}
+        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+      />
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <Skeleton className="h-6 w-48 bg-gradient-to-r from-muted to-muted/60" />
       </CardHeader>
       <CardContent>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis 
-                dataKey="month" 
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                axisLine={{ stroke: "hsl(var(--border))" }}
+        <div className="h-80 flex items-center justify-center relative">
+          {/* Animated line skeleton */}
+          <svg className="w-full h-full" viewBox="0 0 400 200">
+            {type === "sentiment" ? (
+              <>
+                <motion.path
+                  d="M 20 180 Q 100 140 200 120 T 380 100"
+                  stroke="hsl(var(--chart-2) / 0.3)"
+                  strokeWidth="2"
+                  fill="none"
+                  strokeDasharray="5,5"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.path
+                  d="M 20 160 Q 100 140 200 130 T 380 120"
+                  stroke="hsl(var(--chart-3) / 0.3)"
+                  strokeWidth="2"
+                  fill="none"
+                  strokeDasharray="5,5"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 2, delay: 0.2, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.path
+                  d="M 20 140 Q 100 160 200 150 T 380 140"
+                  stroke="hsl(var(--chart-4) / 0.3)"
+                  strokeWidth="2"
+                  fill="none"
+                  strokeDasharray="5,5"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 2, delay: 0.4, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </>
+            ) : (
+              <motion.path
+                d="M 20 160 Q 100 140 200 130 T 380 120"
+                stroke="hsl(var(--chart-4) / 0.4)"
+                strokeWidth="3"
+                fill="none"
+                strokeDasharray="5,5"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
               />
-              <YAxis 
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-                axisLine={{ stroke: "hsl(var(--border))" }}
-                domain={type === "churn" ? [0, 20] : [0, 100]}
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "var(--radius)",
-                  color: "hsl(var(--popover-foreground))"
-                }}
-                formatter={(value, name) => [`${value}%`, name]}
-              />
-              <Legend />
-              
-              {type === "sentiment" ? (
-                <>
-                  <Line type="monotone" dataKey="positive" stroke="hsl(var(--chart-2))" strokeWidth={2} name="Positive" />
-                  <Line type="monotone" dataKey="neutral" stroke="hsl(var(--chart-3))" strokeWidth={2} name="Neutral" />
-                  <Line type="monotone" dataKey="negative" stroke="hsl(var(--chart-4))" strokeWidth={2} name="Negative" />
-                </>
-              ) : (
-                <Line type="monotone" dataKey="churnProbability" stroke="hsl(var(--chart-4))" strokeWidth={3} name="Churn Probability" />
-              )}
-            </LineChart>
-          </ResponsiveContainer>
+            )}
+          </svg>
+        </div>
+        {/* Legend skeleton */}
+        <div className="flex justify-center gap-6 mt-4">
+          {type === "sentiment" ? [1, 2, 3] : [1]}.map((i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Skeleton className="h-3 w-3 rounded-full bg-gradient-to-r from-muted to-muted/60" />
+              <Skeleton className="h-4 w-16 bg-gradient-to-r from-muted to-muted/60" />
+            </div>
+          ))
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// Enhanced legend with animations
+function AnimatedLegend({ payload, hoveredLine, onLineHover, onLineLeave }: any) {
+  return (
+    <motion.div 
+      className="flex justify-center gap-6 mt-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.5 }}
+    >
+      {payload?.map((entry: any, index: number) => {
+        const isHovered = hoveredLine === entry.dataKey;
+        
+        return (
+          <motion.div
+            key={index}
+            className="flex items-center gap-2 cursor-pointer select-none"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onMouseEnter={() => onLineHover(entry.dataKey)}
+            onMouseLeave={onLineLeave}
+            data-testid={`legend-${entry.dataKey}`}
+          >
+            <motion.div
+              className="h-0.5 w-4 rounded-full"
+              style={{
+                backgroundColor: entry.color,
+                boxShadow: isHovered ? `0 0 8px ${entry.color}80` : 'none'
+              }}
+              animate={{
+                scale: isHovered ? 1.2 : 1,
+                height: isHovered ? 6 : 2
+              }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.span
+              className={`text-sm font-medium transition-colors duration-200 ${
+                isHovered ? 'text-foreground' : 'text-muted-foreground'
+              }`}
+              animate={{ 
+                fontWeight: isHovered ? 600 : 500
+              }}
+            >
+              {entry.value}
+            </motion.span>
+          </motion.div>
+        );
+      })}
+    </motion.div>
+  );
+}
+
+export default function ForecastChart({ data, type, isLoading = false }: ForecastChartProps) {
+  const [hoveredLine, setHoveredLine] = useState<string | null>(null);
+  const title = type === "sentiment" ? "Sentiment Forecast" : "Churn Risk Probability Trend";
+
+  if (isLoading) {
+    return <ForecastChartSkeleton type={type} />;
+  }
+
+  const handleLineHover = (line: string) => setHoveredLine(line);
+  const handleLineLeave = () => setHoveredLine(null);
+
+  const lineConfigs = LINE_CONFIGS[type];
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        <Card 
+          className="relative overflow-hidden group hover:shadow-xl transition-all duration-500 ease-out"
+          style={{
+            background: `linear-gradient(135deg, hsl(var(--chart-container-bg)) 0%, hsl(var(--card)) 100%)`,
+            border: `1px solid hsl(var(--chart-container-border))`
+          }}
+          data-testid={`card-forecast-${type}`}
+        >
+          {/* Subtle glow effect */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+            initial={false}
+          />
+          
+          <CardHeader className="relative">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <CardTitle className="text-xl font-semibold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text">
+                {title}
+              </CardTitle>
+            </motion.div>
+          </CardHeader>
+          
+          <CardContent className="relative">
+            <motion.div 
+              className="h-80"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  {/* Gradient definitions */}
+                  <defs>
+                    {Object.entries(lineConfigs).map(([key, config]) => (
+                      <linearGradient key={key} id={`gradient-${key}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={config.gradient.start} stopOpacity={0.8} />
+                        <stop offset="100%" stopColor={config.gradient.end} stopOpacity={0.1} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke="hsl(var(--border) / 0.3)" 
+                    className="animate-pulse"
+                  />
+                  
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tickLine={{ stroke: "hsl(var(--border))" }}
+                  />
+                  
+                  <YAxis 
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tickLine={{ stroke: "hsl(var(--border))" }}
+                    domain={type === "churn" ? [0, 20] : [0, 100]}
+                  />
+                  
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--popover) / 0.95)",
+                      border: "1px solid hsl(var(--border) / 0.5)",
+                      borderRadius: "var(--radius)",
+                      color: "hsl(var(--popover-foreground))",
+                      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                      backdropFilter: "blur(16px)",
+                      fontSize: "14px",
+                      fontWeight: "500"
+                    }}
+                    labelStyle={{
+                      color: "hsl(var(--foreground))",
+                      fontWeight: "600",
+                      marginBottom: "8px"
+                    }}
+                    formatter={(value, name) => [`${value}%`, name]}
+                    cursor={{ 
+                      stroke: "hsl(var(--muted) / 0.5)",
+                      strokeWidth: 1,
+                      strokeDasharray: "5,5"
+                    }}
+                  />
+                  
+                  <Legend 
+                    content={(props) => (
+                      <AnimatedLegend 
+                        {...props}
+                        hoveredLine={hoveredLine}
+                        onLineHover={handleLineHover}
+                        onLineLeave={handleLineLeave}
+                      />
+                    )}
+                  />
+                  
+                  {type === "sentiment" ? (
+                    <motion.g
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.8, delay: 0.3 }}
+                    >
+                      <Line 
+                        type="monotone" 
+                        dataKey="positive" 
+                        stroke={lineConfigs.positive.stroke}
+                        strokeWidth={hoveredLine === "positive" ? 4 : 3}
+                        name="Positive"
+                        dot={{ 
+                          fill: lineConfigs.positive.stroke, 
+                          strokeWidth: 2, 
+                          r: hoveredLine === "positive" ? 6 : 4,
+                          filter: hoveredLine === "positive" ? `drop-shadow(0 0 6px ${lineConfigs.positive.glow})` : undefined
+                        }}
+                        activeDot={{ 
+                          r: 6, 
+                          fill: lineConfigs.positive.stroke,
+                          stroke: "hsl(var(--background))",
+                          strokeWidth: 2,
+                          filter: `drop-shadow(0 0 8px ${lineConfigs.positive.glow})`
+                        }}
+                        animationBegin={0}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                        onMouseEnter={() => handleLineHover("positive")}
+                        onMouseLeave={handleLineLeave}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="neutral" 
+                        stroke={lineConfigs.neutral.stroke}
+                        strokeWidth={hoveredLine === "neutral" ? 4 : 3}
+                        name="Neutral"
+                        dot={{ 
+                          fill: lineConfigs.neutral.stroke, 
+                          strokeWidth: 2, 
+                          r: hoveredLine === "neutral" ? 6 : 4,
+                          filter: hoveredLine === "neutral" ? `drop-shadow(0 0 6px ${lineConfigs.neutral.glow})` : undefined
+                        }}
+                        activeDot={{ 
+                          r: 6, 
+                          fill: lineConfigs.neutral.stroke,
+                          stroke: "hsl(var(--background))",
+                          strokeWidth: 2,
+                          filter: `drop-shadow(0 0 8px ${lineConfigs.neutral.glow})`
+                        }}
+                        animationBegin={200}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                        onMouseEnter={() => handleLineHover("neutral")}
+                        onMouseLeave={handleLineLeave}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="negative" 
+                        stroke={lineConfigs.negative.stroke}
+                        strokeWidth={hoveredLine === "negative" ? 4 : 3}
+                        name="Negative"
+                        dot={{ 
+                          fill: lineConfigs.negative.stroke, 
+                          strokeWidth: 2, 
+                          r: hoveredLine === "negative" ? 6 : 4,
+                          filter: hoveredLine === "negative" ? `drop-shadow(0 0 6px ${lineConfigs.negative.glow})` : undefined
+                        }}
+                        activeDot={{ 
+                          r: 6, 
+                          fill: lineConfigs.negative.stroke,
+                          stroke: "hsl(var(--background))",
+                          strokeWidth: 2,
+                          filter: `drop-shadow(0 0 8px ${lineConfigs.negative.glow})`
+                        }}
+                        animationBegin={400}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                        onMouseEnter={() => handleLineHover("negative")}
+                        onMouseLeave={handleLineLeave}
+                      />
+                    </motion.g>
+                  ) : (
+                    <motion.g
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.8, delay: 0.3 }}
+                    >
+                      <Line 
+                        type="monotone" 
+                        dataKey="churnProbability" 
+                        stroke={lineConfigs.churnProbability.stroke}
+                        strokeWidth={hoveredLine === "churnProbability" ? 5 : 4}
+                        name="Churn Probability"
+                        dot={{ 
+                          fill: lineConfigs.churnProbability.stroke, 
+                          strokeWidth: 2, 
+                          r: hoveredLine === "churnProbability" ? 7 : 5,
+                          filter: hoveredLine === "churnProbability" ? `drop-shadow(0 0 8px ${lineConfigs.churnProbability.glow})` : undefined
+                        }}
+                        activeDot={{ 
+                          r: 8, 
+                          fill: lineConfigs.churnProbability.stroke,
+                          stroke: "hsl(var(--background))",
+                          strokeWidth: 3,
+                          filter: `drop-shadow(0 0 10px ${lineConfigs.churnProbability.glow})`
+                        }}
+                        animationBegin={0}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                        onMouseEnter={() => handleLineHover("churnProbability")}
+                        onMouseLeave={handleLineLeave}
+                      />
+                    </motion.g>
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </motion.div>
+
+            {/* Glow effect overlay for hovered line */}
+            {hoveredLine && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <div 
+                  className="absolute inset-0"
+                  style={{
+                    background: `radial-gradient(ellipse at center, ${lineConfigs[hoveredLine as keyof typeof lineConfigs]?.glow} 0%, transparent 70%)`,
+                    filter: "blur(20px)"
+                  }}
+                />
+              </motion.div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </AnimatePresence>
   );
 }

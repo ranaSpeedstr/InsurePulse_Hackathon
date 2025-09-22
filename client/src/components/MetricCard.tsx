@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, useAnimationControls } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface MetricCardProps {
   title: string;
@@ -21,14 +21,17 @@ function AnimatedValue({ value, isLoading }: { value: string | number; isLoading
     return <Skeleton className="h-8 w-20 bg-gradient-to-r from-muted to-muted/60" />;
   }
 
+  // Ensure value is properly converted to string for rendering
+  const displayValue = typeof value === 'object' ? String(value) : value;
+
   return (
     <motion.span
-      key={value}
+      key={String(value)}
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
-      {value}
+      {displayValue}
     </motion.span>
   );
 }
