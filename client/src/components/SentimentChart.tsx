@@ -16,6 +16,19 @@ interface SentimentMetadata {
   totalAnalyzed: number;
   lastUpdated: string;
   analysisTypes: Array<{ label: string; count: number; percentage: number }>;
+  // Client-specific metadata
+  clientBreakdown: Array<{
+    clientId: string;
+    clientName: string;
+    conversations: number;
+    emails: number;
+    totalItems: number;
+    sentiments: { positive: number; neutral: number; negative: number };
+  }>;
+  totalClients: number;
+  recentActivity: number;
+  sources: { conversations: number; emails: number };
+  averageConfidence: number;
 }
 
 interface SentimentChartProps {
@@ -466,70 +479,163 @@ export default function SentimentChart({ data, metadata, isLoading = false }: Se
                 })}
               </div>
 
-              {/* Analysis Summary Graphics */}
+              {/* Client-Based Data Sources Section */}
               {metadata && (
-                <motion.div 
-                  className="flex items-center justify-between pt-4 border-t border-border"
+                <motion.div
+                  className="space-y-4 pt-4 border-t border-border"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8 }}
-                  data-testid="analysis-summary"
+                  data-testid="client-data-section"
                 >
-                  {/* Overall Sentiment Score Gauge */}
-                  <div className="flex items-center gap-3">
-                    <div className="text-sm text-muted-foreground">Overall Sentiment</div>
-                    <div className="flex items-center gap-1">
-                      {/* Simple sentiment gauge - visual representation */}
-                      <motion.div
-                        className="w-12 h-2 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full relative overflow-hidden"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                      >
-                        <motion.div
-                          className="absolute top-0 w-1 h-full bg-white shadow-md rounded-full"
-                          initial={{ left: "50%" }}
-                          animate={{ 
-                            left: `${Math.max(10, Math.min(90, 
-                              (data.find(d => d.name === 'Positive')?.value || 0) - 
-                              (data.find(d => d.name === 'Negative')?.value || 0) + 50
-                            ))}%` 
-                          }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                        />
-                      </motion.div>
+                  {/* Data Sources Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-semibold text-foreground">Client Data Sources</h4>
                       <motion.div 
-                        className="text-xs font-medium"
-                        animate={prefersReducedMotion ? {} : { scale: [1, 1.05, 1] }}
-                        transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 4 }}
+                        className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs"
+                        animate={prefersReducedMotion ? {} : { scale: [1, 1.02, 1] }}
+                        transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 3 }}
                       >
-                        {(() => {
-                          const positiveValue = data.find(d => d.name === 'Positive')?.value || 0;
-                          const negativeValue = data.find(d => d.name === 'Negative')?.value || 0;
-                          return positiveValue > negativeValue ? '😊' : 
-                                 positiveValue === negativeValue ? '😐' : '😕';
-                        })()}
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                        Real-time Analysis
                       </motion.div>
+                    </div>
+                    
+                    {/* Data Source Stats */}
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        {metadata.sources.conversations} Conversations
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                        {metadata.sources.emails} Emails
+                      </div>
+                      <div className="font-medium text-foreground">{metadata.totalClients} Clients</div>
                     </div>
                   </div>
 
-                  {/* Analysis Method Badge */}
+                  {/* Client Breakdown Grid */}
+                  {metadata.clientBreakdown?.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {metadata.clientBreakdown.slice(0, 6).map((client, index) => (
+                        <motion.div
+                          key={client.clientId}
+                          className="bg-muted/50 rounded-lg p-3 border border-border/50"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.9 + index * 0.1 }}
+                          data-testid={`client-breakdown-${client.clientId}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="font-medium text-sm text-foreground">{client.clientName}</div>
+                            <div className="text-xs text-muted-foreground">{client.totalItems} items</div>
+                          </div>
+                          
+                          {/* Client Sentiment Distribution */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex-1 flex items-center gap-1">
+                              <div 
+                                className="h-1 bg-green-500 rounded-full" 
+                                style={{ width: `${(client.sentiments.positive / client.totalItems) * 100}%` }}
+                              />
+                              <div 
+                                className="h-1 bg-yellow-500 rounded-full" 
+                                style={{ width: `${(client.sentiments.neutral / client.totalItems) * 100}%` }}
+                              />
+                              <div 
+                                className="h-1 bg-red-500 rounded-full" 
+                                style={{ width: `${(client.sentiments.negative / client.totalItems) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Source Type Breakdown */}
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <div>{client.conversations} conversations</div>
+                            <div>{client.emails} emails</div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Analysis Summary Stats */}
                   <motion.div 
-                    className="flex items-center gap-2 text-xs"
-                    whileHover={{ scale: 1.05 }}
+                    className="flex items-center justify-between pt-3 border-t border-border/50"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.2 }}
+                    data-testid="analysis-summary"
                   >
-                    <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full">
-                      <motion.div
-                        className="w-2 h-2 bg-primary rounded-full"
-                        animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1] }}
-                        transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 2 }}
-                      />
-                      <span className="font-medium">AI Powered</span>
+                    {/* Overall Sentiment Gauge */}
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm text-muted-foreground">Overall Sentiment</div>
+                      <div className="flex items-center gap-1">
+                        <motion.div
+                          className="w-12 h-2 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 rounded-full relative overflow-hidden"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          <motion.div
+                            className="absolute top-0 w-1 h-full bg-white shadow-md rounded-full"
+                            initial={{ left: "50%" }}
+                            animate={{ 
+                              left: `${Math.max(10, Math.min(90, 
+                                (data.find(d => d.name === 'Positive')?.value || 0) - 
+                                (data.find(d => d.name === 'Negative')?.value || 0) + 50
+                              ))}%` 
+                            }}
+                            transition={{ duration: 1, ease: "easeOut" }}
+                          />
+                        </motion.div>
+                        <motion.div 
+                          className="text-xs font-medium"
+                          animate={prefersReducedMotion ? {} : { scale: [1, 1.05, 1] }}
+                          transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 4 }}
+                        >
+                          {(() => {
+                            const positiveValue = data.find(d => d.name === 'Positive')?.value || 0;
+                            const negativeValue = data.find(d => d.name === 'Negative')?.value || 0;
+                            return positiveValue > negativeValue ? '😊' : 
+                                   positiveValue === negativeValue ? '😐' : '😕';
+                          })()}
+                        </motion.div>
+                      </div>
                     </div>
-                    
-                    {/* Confidence Indicator */}
-                    <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                      <div className="text-xs">95% Confidence</div>
-                    </div>
+
+                    {/* Enhanced Analysis Method with Real Data Indicators */}
+                    <motion.div 
+                      className="flex items-center gap-2 text-xs"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full">
+                        <motion.div
+                          className="w-2 h-2 bg-primary rounded-full"
+                          animate={prefersReducedMotion ? {} : { scale: [1, 1.2, 1] }}
+                          transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 2 }}
+                        />
+                        <span className="font-medium">AI Analysis</span>
+                      </div>
+                      
+                      {/* Enhanced Confidence with Real Data */}
+                      <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                        <div className="text-xs">{Math.round(metadata.averageConfidence * 100)}% Avg Confidence</div>
+                      </div>
+
+                      {/* Recent Activity Indicator */}
+                      {metadata.recentActivity > 0 && (
+                        <div className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                          <motion.div
+                            className="w-2 h-2 bg-orange-500 rounded-full"
+                            animate={prefersReducedMotion ? {} : { scale: [1, 1.3, 1] }}
+                            transition={prefersReducedMotion ? {} : { repeat: Infinity, duration: 1.5 }}
+                          />
+                          <span className="text-xs">{metadata.recentActivity} recent</span>
+                        </div>
+                      )}
+                    </motion.div>
                   </motion.div>
                 </motion.div>
               )}

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
-import { alerts, email_notifications, client_time_series, forecast_predictions, clients, sentiment_analysis } from "../shared/schema";
+import { alerts, email_notifications, client_time_series, forecast_predictions, clients, sentiment_analysis, conversations, emails } from "../shared/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { triggerDetectionService } from "./trigger-detection";
 import { forecastService } from "./forecast-service";
@@ -44,7 +44,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/sentiment-distribution", async (req, res) => {
     try {
-      // Get sentiment distribution from sentiment_analysis table
+      // Get basic sentiment distribution first, then enhance with client data
       const sentimentCounts = await db
         .select({
           label: sentiment_analysis.sentiment_label,
@@ -52,6 +52,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .from(sentiment_analysis)
         .groupBy(sentiment_analysis.sentiment_label);
+
+      // Get detailed sentiment with client context (separate query to avoid complex joins)
+      const sentimentWithClients = await db
+        .select({
+          label: sentiment_analysis.sentiment_label,
+          contentType: sentiment_analysis.content_type,
+          analysisMethod: sentiment_analysis.analysis_method,
+          confidence: sentiment_analysis.confidence,
+          createdAt: sentiment_analysis.created_at,
+          contentId: sentiment_analysis.content_id,
+        })
+        .from(sentiment_analysis);
+
+      // Enrich with client data by looking up conversations and emails separately
+      const enrichedSentimentData = [];
+      for (const item of sentimentWithClients) {
+        let clientId = null;
+        let clientName = 'Unknown Client';
+
+        if (item.contentType === 'conversation') {
+          const conv = await db.select({ client_id: conversations.client_id })
+            .from(conversations)
+            .where(eq(conversations.id, item.contentId))
+            .limit(1);
+          if (conv.length > 0) {
+            clientId = conv[0].client_id;
+            
+            // Get client name
+            const client = await db.select({ primary_contact: clients.primary_contact })
+              .from(clients)
+              .where(eq(clients.client_id, clientId))
+              .limit(1);
+            if (client.length > 0) {
+              clientName = client[0].primary_contact;
+            }
+          }
+        } else if (item.contentType === 'email') {
+          const email = await db.select({ client_id: emails.client_id })
+            .from(emails)
+            .where(eq(emails.id, item.contentId))
+            .limit(1);
+          if (email.length > 0 && email[0].client_id) {
+            clientId = email[0].client_id;
+            
+            // Get client name
+            const client = await db.select({ primary_contact: clients.primary_contact })
+              .from(clients)
+              .where(eq(clients.client_id, clientId))
+              .limit(1);
+            if (client.length > 0) {
+              clientName = client[0].primary_contact;
+            }
+          }
+        }
+
+        enrichedSentimentData.push({
+          ...item,
+          clientId,
+          clientName
+        });
+      }
 
       // Calculate totals and percentages
       const totalAnalyzed = sentimentCounts.reduce((sum, item) => sum + item.count, 0);
@@ -69,7 +130,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           metadata: {
             totalAnalyzed: 0,
             lastUpdated: new Date().toISOString(),
-            analysisTypes: []
+            analysisTypes: [],
+            // Client-specific metadata for no data case
+            clientBreakdown: [],
+            totalClients: 0,
+            recentActivity: 0,
+            sources: { conversations: 0, emails: 0 },
+            averageConfidence: 0
           }
         };
         
@@ -103,7 +170,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Add metadata for frontend use
+      // Create client breakdown for metadata
+      const clientBreakdown = sentimentWithClients.reduce((acc, item) => {
+        if (!item.clientId) return acc;
+        
+        if (!acc[item.clientId]) {
+          acc[item.clientId] = {
+            clientId: item.clientId,
+            clientName: item.clientName,
+            conversations: 0,
+            emails: 0,
+            totalItems: 0,
+            sentiments: { positive: 0, neutral: 0, negative: 0 }
+          };
+        }
+        
+        acc[item.clientId].totalItems++;
+        acc[item.clientId][item.contentType === 'conversation' ? 'conversations' : 'emails']++;
+        acc[item.clientId].sentiments[item.label.toLowerCase() as keyof typeof acc[typeof item.clientId]['sentiments']]++;
+        
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Get recent activity (last 24 hours)
+      const recentActivity = sentimentWithClients.filter(item => 
+        item.createdAt && new Date(item.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000
+      ).length;
+
+      // Add metadata for frontend use with client-specific information
       const responseData = {
         data: result,
         metadata: {
@@ -113,11 +207,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             label: item.label,
             count: item.count,
             percentage: Math.round((item.count / totalAnalyzed) * 100)
-          }))
+          })),
+          // Client-specific metadata
+          clientBreakdown: Object.values(clientBreakdown),
+          totalClients: Object.keys(clientBreakdown).length,
+          recentActivity,
+          sources: {
+            conversations: sentimentWithClients.filter(s => s.contentType === 'conversation').length,
+            emails: sentimentWithClients.filter(s => s.contentType === 'email').length
+          },
+          averageConfidence: Math.round(
+            sentimentWithClients.reduce((sum, item) => sum + (item.confidence || 0), 0) / 
+            sentimentWithClients.length * 100
+          ) / 100 || 0
         }
       };
 
-      console.log(`[Routes] Sentiment distribution: ${totalAnalyzed} total analyzed entries`);
+      console.log(`[Routes] Client-based sentiment distribution: ${totalAnalyzed} total analyzed from ${Object.keys(clientBreakdown).length} clients`);
       res.json(responseData);
     } catch (error) {
       console.error("Error fetching sentiment distribution:", error);
