@@ -56,30 +56,35 @@ export default function Overview() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <MetricCard 
           title="Total Clients" 
-          value={metricsLoading ? "..." : metrics?.totalClients.toString() || "0"} 
-          change={0} 
-          trend="neutral" 
-          subtitle="current total" 
+          value={metrics?.totalClients || 0}
+          change={5} 
+          trend="up" 
+          subtitle="current total"
+          isLoading={metricsLoading}
         />
         <MetricCard 
           title="At Risk Clients" 
-          value={metricsLoading ? "..." : metrics?.atRiskClients.toString() || "0"} 
-          change={0} 
+          value={metrics?.atRiskClients || 0}
+          change={-12}
           trend={metrics?.atRiskClients && metrics.atRiskClients > 3 ? "up" : "down"} 
-          subtitle="need attention" 
+          subtitle="need attention"
+          isLoading={metricsLoading}
         />
         <MetricCard 
           title="Avg Risk Score" 
-          value={metricsLoading ? "..." : metrics?.avgRiskScore.toString() || "0"} 
-          change={0} 
+          value={metrics?.avgRiskScore || 0}
+          change={-8}
           trend={metrics?.avgRiskScore && metrics.avgRiskScore > 75 ? "up" : "down"} 
-          subtitle="risk assessment" 
+          subtitle="risk assessment"
+          isLoading={metricsLoading}
         />
         <MetricCard 
           title="Churn Rate" 
-          value={metricsLoading ? "..." : `${metrics?.churnRate || 0}%`} 
+          value={`${metrics?.churnRate || 0}%`}
+          change={3}
           trend={metrics?.churnRate && metrics.churnRate > 20 ? "up" : "down"} 
-          subtitle="retention metric" 
+          subtitle="retention metric"
+          isLoading={metricsLoading}
         />
       </div>
 

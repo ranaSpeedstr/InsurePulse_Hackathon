@@ -76,6 +76,13 @@
   --chart-4: 0 84% 60%;
   --chart-5: 280 65% 60%;
 
+  /* Gradient colors for MetricCard backgrounds */
+  --metric-gradient-start: 0 0% 97%;
+  --metric-gradient-end: 220 8% 94%;
+  --metric-gradient-positive: 142 76% 45%;
+  --metric-gradient-negative: 0 84% 55%;
+  --metric-gradient-neutral: 220 10% 88%;
+
   --font-sans: Inter, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -194,6 +201,13 @@
   --chart-3: 45 93% 65%;
   --chart-4: 0 84% 70%;
   --chart-5: 280 65% 70%;
+
+  /* Gradient colors for MetricCard backgrounds */
+  --metric-gradient-start: 220 20% 14%;
+  --metric-gradient-end: 220 18% 10%;
+  --metric-gradient-positive: 142 76% 45%;
+  --metric-gradient-negative: 0 84% 65%;
+  --metric-gradient-neutral: 220 13% 20%;
 
   --shadow-2xs: 0px 1px 2px 0px hsl(220 15% 5% / 0.40);
   --shadow-xs: 0px 1px 2px 0px hsl(220 15% 5% / 0.40);
