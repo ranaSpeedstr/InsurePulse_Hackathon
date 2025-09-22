@@ -120,9 +120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (totalAnalyzed === 0) {
         // Return consistent object structure even when no data
         const defaultData = [
-          { name: "Positive", value: 0, color: "hsl(var(--chart-2))", count: 0 },
+          { name: "Positive", value: 0, color: "#22c55e", count: 0 },
           { name: "Neutral", value: 0, color: "hsl(var(--chart-3))", count: 0 },
-          { name: "Negative", value: 0, color: "hsl(var(--chart-4))", count: 0 }
+          { name: "Negative", value: 0, color: "#ef4444", count: 0 }
         ];
         
         const responseData = {
@@ -145,9 +145,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Map database labels to display format and calculate percentages
       const sentimentMap = {
-        positive: { name: "Positive", color: "hsl(var(--chart-2))" },
+        positive: { name: "Positive", color: "#22c55e" },
         neutral: { name: "Neutral", color: "hsl(var(--chart-3))" }, 
-        negative: { name: "Negative", color: "hsl(var(--chart-4))" }
+        negative: { name: "Negative", color: "#ef4444" }
       };
 
       // Initialize result with all sentiment types
