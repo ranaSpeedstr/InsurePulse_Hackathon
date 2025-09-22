@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ClientProfile>
     <Client>A</Client>
+    <Primary_Contact>Alice Johnson</Primary_Contact>
     <Region>East</Region>
     <Industry>WC Insurance</Industry>
     <Contract_Status>Renewed</Contract_Status>
