@@ -4,7 +4,7 @@ import { BarChart3, Users, TrendingUp, Settings, AlertTriangle, Home } from "luc
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import logoImage from "@assets/generated_images/Professional_analytics_company_logo_932e6c2c.png";
+import logoImage from "@assets/InsurePluselogo_1758565060236.png";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
