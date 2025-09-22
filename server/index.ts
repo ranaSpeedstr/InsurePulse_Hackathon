@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { backgroundJobProcessor } from "./background-jobs";
 
 const app = express();
 app.use(express.json());
@@ -65,7 +66,15 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
+    
+    // Initialize background job processor
+    try {
+      await backgroundJobProcessor.initialize();
+      log('Background job processor started successfully');
+    } catch (error) {
+      log('Failed to start background job processor:', String(error));
+    }
   });
 })();
