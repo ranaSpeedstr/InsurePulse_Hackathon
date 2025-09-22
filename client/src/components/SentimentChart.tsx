@@ -379,30 +379,12 @@ export default function SentimentChart({ data, metadata, isLoading = false }: Se
               </ResponsiveContainer>
             </motion.div>
 
-            {/* Pulse effect overlay for active segment */}
-            {hoveredSegment && !prefersReducedMotion && (
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div 
-                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full"
-                  style={{
-                    background: `radial-gradient(circle, ${GRADIENT_COLORS[hoveredSegment as keyof typeof GRADIENT_COLORS]?.glow} 0%, transparent 70%)`,
-                    animation: "pulse 2s ease-in-out infinite"
-                  }}
-                />
-              </motion.div>
-            )}
-
             {/* Detailed Breakdown Section */}
             <motion.div
-              className="mt-4 space-y-3"
+              className="mt-2 space-y-3"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: prefersReducedMotion ? 0.01 : 0.6, delay: prefersReducedMotion ? 0 : 0.3 }}
+              transition={{ duration: prefersReducedMotion ? 0.01 : 0.6, delay: prefersReducedMotion ? 0 : 0.2 }}
               data-testid="detailed-breakdown-section"
             >
               <h4 className="text-sm font-semibold text-foreground mb-3">Detailed Breakdown</h4>
@@ -476,6 +458,24 @@ export default function SentimentChart({ data, metadata, isLoading = false }: Se
                 );
               })}
             </motion.div>
+
+            {/* Pulse effect overlay for active segment */}
+            {hoveredSegment && !prefersReducedMotion && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <div 
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full"
+                  style={{
+                    background: `radial-gradient(circle, ${GRADIENT_COLORS[hoveredSegment as keyof typeof GRADIENT_COLORS]?.glow} 0%, transparent 70%)`,
+                    animation: "pulse 2s ease-in-out infinite"
+                  }}
+                />
+              </motion.div>
+            )}
 
             {/* Client Data Sources Section */}
             <motion.div
