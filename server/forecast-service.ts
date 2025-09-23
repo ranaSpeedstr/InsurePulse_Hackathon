@@ -120,14 +120,37 @@ export class ForecastService {
   private calculateSentimentTrendIndex(client: ClientCSVData): number {
     const deliveredBacklogRatio = client.Backlog > 0 ? client.Delivered / client.Backlog : client.Delivered;
     
-    const sti = (0.4 * client.Support_Score) 
-                - (0.2 * client.Avg_Response_Days) 
-                - (0.2 * client.Avg_Delivery_Days) 
-                - (5 * client.Escalations) 
-                + (3 * deliveredBacklogRatio);
+    console.log(`\n=== STI Calculation for Client ${client.Client_ID} ===`);
+    console.log(`Input Values:`);
+    console.log(`  Support_Score: ${client.Support_Score}`);
+    console.log(`  Avg_Response_Days: ${client.Avg_Response_Days}`);
+    console.log(`  Avg_Delivery_Days: ${client.Avg_Delivery_Days}`);
+    console.log(`  Escalations: ${client.Escalations}`);
+    console.log(`  Delivered: ${client.Delivered}`);
+    console.log(`  Backlog: ${client.Backlog}`);
+    console.log(`  Delivered/Backlog Ratio: ${deliveredBacklogRatio.toFixed(4)}`);
+    
+    const supportTerm = 0.4 * client.Support_Score;
+    const responseTerm = 0.2 * client.Avg_Response_Days;
+    const deliveryTerm = 0.2 * client.Avg_Delivery_Days;
+    const escalationTerm = 5 * client.Escalations;
+    const ratioTerm = 3 * deliveredBacklogRatio;
+    
+    console.log(`Formula Components:`);
+    console.log(`  (0.4 × ${client.Support_Score}) = ${supportTerm.toFixed(4)}`);
+    console.log(`  (0.2 × ${client.Avg_Response_Days}) = ${responseTerm.toFixed(4)}`);
+    console.log(`  (0.2 × ${client.Avg_Delivery_Days}) = ${deliveryTerm.toFixed(4)}`);
+    console.log(`  (5 × ${client.Escalations}) = ${escalationTerm.toFixed(4)}`);
+    console.log(`  (3 × ${deliveredBacklogRatio.toFixed(4)}) = ${ratioTerm.toFixed(4)}`);
+    
+    const sti = supportTerm - responseTerm - deliveryTerm - escalationTerm + ratioTerm;
+    console.log(`Raw STI = ${supportTerm.toFixed(4)} - ${responseTerm.toFixed(4)} - ${deliveryTerm.toFixed(4)} - ${escalationTerm.toFixed(4)} + ${ratioTerm.toFixed(4)} = ${sti.toFixed(4)}`);
     
     // Normalize to 0-100 scale
-    return Math.max(0, Math.min(100, sti));
+    const normalizedSTI = Math.max(0, Math.min(100, sti));
+    console.log(`Normalized STI (0-100): ${normalizedSTI.toFixed(4)}`);
+    
+    return normalizedSTI;
   }
 
   /**
@@ -139,12 +162,35 @@ export class ForecastService {
     const policyLapseRate = client.Policy_Lapse_Count / 100;
     const competitorQuotesRate = client.Competitor_Quotes_Requested / 100;
     
-    const crp = baseRisk 
-                + (0.5 * policyLapseRate) 
-                + (0.3 * competitorQuotesRate) 
-                - (0.4 * renewalRateImprovement / 100);
+    console.log(`\n=== CRP Calculation for Client ${client.Client_ID} ===`);
+    console.log(`Input Values:`);
+    console.log(`  Risk_Score: ${client.Risk_Score}`);
+    console.log(`  Policy_Lapse_Count: ${client.Policy_Lapse_Count}`);
+    console.log(`  Competitor_Quotes_Requested: ${client.Competitor_Quotes_Requested}`);
+    console.log(`  Renewal_Rate_Improvement: ${renewalRateImprovement}`);
+    console.log(`Converted Rates:`);
+    console.log(`  Base_Risk (${client.Risk_Score}/100): ${baseRisk.toFixed(4)}`);
+    console.log(`  Policy_Lapse_Rate (${client.Policy_Lapse_Count}/100): ${policyLapseRate.toFixed(4)}`);
+    console.log(`  Competitor_Quotes_Rate (${client.Competitor_Quotes_Requested}/100): ${competitorQuotesRate.toFixed(4)}`);
     
-    return Math.max(0, Math.min(1, crp)) * 100;
+    const baseTerm = baseRisk;
+    const policyTerm = 0.5 * policyLapseRate;
+    const competitorTerm = 0.3 * competitorQuotesRate;
+    const improvementTerm = 0.4 * renewalRateImprovement / 100;
+    
+    console.log(`Formula Components:`);
+    console.log(`  Base_Risk = ${baseTerm.toFixed(4)}`);
+    console.log(`  (0.5 × ${policyLapseRate.toFixed(4)}) = ${policyTerm.toFixed(4)}`);
+    console.log(`  (0.3 × ${competitorQuotesRate.toFixed(4)}) = ${competitorTerm.toFixed(4)}`);
+    console.log(`  (0.4 × ${renewalRateImprovement}/100) = ${improvementTerm.toFixed(4)}`);
+    
+    const crp = baseTerm + policyTerm + competitorTerm - improvementTerm;
+    console.log(`Raw CRP = ${baseTerm.toFixed(4)} + ${policyTerm.toFixed(4)} + ${competitorTerm.toFixed(4)} - ${improvementTerm.toFixed(4)} = ${crp.toFixed(4)}`);
+    
+    const normalizedCRP = Math.max(0, Math.min(1, crp)) * 100;
+    console.log(`Normalized CRP (0-100%): ${normalizedCRP.toFixed(4)}%`);
+    
+    return normalizedCRP;
   }
 
   /**
@@ -163,10 +209,16 @@ export class ForecastService {
    * Calculate 6-month forecast for a client
    */
   private calculate6MonthForecast(client: ClientCSVData): CSVForecastResult {
+    console.log(`\n\n========================================`);
+    console.log(`📊 6-MONTH FORECAST FOR CLIENT ${client.Client_ID}`);
+    console.log(`========================================`);
+    
     // Current metrics
+    console.log(`\n🔍 STEP 1: Calculate Current Metrics`);
     const currentSTI = this.calculateSentimentTrendIndex(client);
     const currentCRP = this.calculateChurnRiskProbability(client);
     
+    console.log(`\n📈 STEP 2: Apply 6-Month Improvement Assumptions`);
     // 6-month improvements based on assumptions
     const responseImprovement = client.Avg_Response_Days * 0.15; // 2-3% monthly * 6 months ≈ 15%
     const deliveryImprovement = client.Avg_Delivery_Days * 0.15;
@@ -175,6 +227,15 @@ export class ForecastService {
     const backlogReduction = Math.max(1, client.Backlog * 0.7); // 30% backlog reduction
     const renewalRateImprovement = client.Renewal_Rate < 70 ? 12 : 8; // Higher improvement for lower performers
     const riskScoreReduction = 15; // 2-3 pts/month * 6 months
+    
+    console.log(`Improvement Assumptions:`);
+    console.log(`  Response Time: ${client.Avg_Response_Days} → ${(client.Avg_Response_Days - responseImprovement).toFixed(2)} (${responseImprovement.toFixed(2)} days improvement, 15% reduction)`);
+    console.log(`  Delivery Time: ${client.Avg_Delivery_Days} → ${(client.Avg_Delivery_Days - deliveryImprovement).toFixed(2)} (${deliveryImprovement.toFixed(2)} days improvement, 15% reduction)`);
+    console.log(`  Support Score: ${client.Support_Score} → ${Math.min(100, client.Support_Score + supportScoreImprovement)} (+${supportScoreImprovement} points, ${client.Escalations > 0 ? '1-2 pts/month × 6 months' : '0.5 pts/month × 6 months'})`);
+    console.log(`  Escalations: ${client.Escalations} → ${escalationReduction} (reduction of ${client.Escalations - escalationReduction})`);
+    console.log(`  Backlog: ${client.Backlog} → ${backlogReduction.toFixed(1)} (30% reduction)`);
+    console.log(`  Renewal Rate: ${client.Renewal_Rate}% → ${Math.min(95, client.Renewal_Rate + renewalRateImprovement)}% (+${renewalRateImprovement}% improvement, ${client.Renewal_Rate < 70 ? 'high improvement for low performer' : 'standard improvement'})`);
+    console.log(`  Risk Score: ${client.Risk_Score} → ${Math.max(30, client.Risk_Score - riskScoreReduction)} (-${riskScoreReduction} points, 2-3 pts/month × 6 months)`);
     
     // Create forecasted client data
     const forecastedClient: ClientCSVData = {
@@ -188,9 +249,32 @@ export class ForecastService {
       Risk_Score: Math.max(30, client.Risk_Score - riskScoreReduction)
     };
     
+    console.log(`\n🔮 STEP 3: Calculate Forecasted Metrics with Improved Values`);
     // Calculate forecasted metrics
     const forecastedSTI = this.calculateSentimentTrendIndex(forecastedClient);
     const forecastedCRP = this.calculateChurnRiskProbability(forecastedClient, renewalRateImprovement);
+    
+    const currentTrend = this.getSentimentTrend(currentSTI);
+    const forecastedTrend = this.getSentimentTrend(forecastedSTI);
+    
+    console.log(`\n📋 STEP 4: Final Forecast Results Summary`);
+    console.log(`Current State:`);
+    console.log(`  STI: ${currentSTI.toFixed(2)} (${currentTrend})`);
+    console.log(`  CRP: ${currentCRP.toFixed(2)}%`);
+    console.log(`  Renewal Rate: ${client.Renewal_Rate}%`);
+    console.log(`  Risk Score: ${client.Risk_Score}`);
+    
+    console.log(`Forecasted State (6 months):`);
+    console.log(`  STI: ${forecastedSTI.toFixed(2)} (${forecastedTrend})`);
+    console.log(`  CRP: ${forecastedCRP.toFixed(2)}%`);
+    console.log(`  Renewal Rate: ${forecastedClient.Renewal_Rate}%`);
+    console.log(`  Risk Score: ${forecastedClient.Risk_Score}`);
+    
+    console.log(`Improvements:`);
+    console.log(`  Sentiment: ${currentTrend} → ${forecastedTrend}`);
+    console.log(`  Renewal Rate: +${renewalRateImprovement}%`);
+    console.log(`  Risk Score: -${riskScoreReduction} points`);
+    console.log(`========================================\n\n`);
     
     return {
       clientId: client.Client_ID,
@@ -199,19 +283,19 @@ export class ForecastService {
         churnRiskProbability: currentCRP,
         renewalRate: client.Renewal_Rate,
         riskScore: client.Risk_Score,
-        sentimentTrend: this.getSentimentTrend(currentSTI)
+        sentimentTrend: currentTrend
       },
       forecast6Months: {
         sentimentTrendIndex: forecastedSTI,
         churnRiskProbability: forecastedCRP,
         renewalRate: forecastedClient.Renewal_Rate,
         riskScore: forecastedClient.Risk_Score,
-        sentimentTrend: this.getSentimentTrend(forecastedSTI)
+        sentimentTrend: forecastedTrend
       },
       improvements: {
         renewalRateChange: renewalRateImprovement,
         riskScoreChange: riskScoreReduction,
-        sentimentImprovement: `${this.getSentimentTrend(currentSTI)} → ${this.getSentimentTrend(forecastedSTI)}`
+        sentimentImprovement: `${currentTrend} → ${forecastedTrend}`
       }
     };
   }
