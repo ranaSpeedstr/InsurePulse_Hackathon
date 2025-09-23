@@ -44,30 +44,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/sentiment-distribution", async (req, res) => {
     try {
-      // Get basic sentiment distribution first, then enhance with client data
-      const sentimentCounts = await db
-        .select({
-          label: sentiment_analysis.sentiment_label,
-          count: count(sentiment_analysis.id),
-        })
-        .from(sentiment_analysis)
-        .groupBy(sentiment_analysis.sentiment_label);
-
-      // Get detailed sentiment with client context (separate query to avoid complex joins)
-      const sentimentWithClients = await db
-        .select({
-          label: sentiment_analysis.sentiment_label,
-          contentType: sentiment_analysis.content_type,
-          analysisMethod: sentiment_analysis.analysis_method,
-          confidence: sentiment_analysis.confidence,
-          createdAt: sentiment_analysis.created_at,
-          contentId: sentiment_analysis.content_id,
-        })
-        .from(sentiment_analysis);
-
-      // More efficient approach: Use JOINs to get client data in fewer queries
-      let enrichedSentimentData = [];
-      
       // Get conversations with client data in one query
       const conversationSentiment = await db
         .select({
@@ -105,21 +81,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .where(eq(sentiment_analysis.content_type, 'email'));
 
       // Combine both results
-      enrichedSentimentData = [...conversationSentiment, ...emailSentiment];
-
-      // Calculate totals and percentages
-      const totalAnalyzed = sentimentCounts.reduce((sum, item) => sum + item.count, 0);
+      const enrichedSentimentData = [...conversationSentiment, ...emailSentiment];
+      const totalAnalyzed = enrichedSentimentData.length;
 
       if (totalAnalyzed === 0) {
         // Return consistent object structure even when no data
-        const defaultData = [
-          { name: "Positive", value: 0, color: "#22c55e", count: 0 },
-          { name: "Neutral", value: 0, color: "hsl(var(--chart-3))", count: 0 },
-          { name: "Negative", value: 0, color: "#ef4444", count: 0 }
-        ];
-        
         const responseData = {
-          data: defaultData,
+          data: [],
           metadata: {
             totalAnalyzed: 0,
             lastUpdated: new Date().toISOString(),
@@ -136,32 +104,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(responseData);
       }
 
-      // Map database labels to display format and calculate percentages
-      const sentimentMap = {
-        positive: { name: "Positive", color: "#22c55e" },
-        neutral: { name: "Neutral", color: "hsl(var(--chart-3))" }, 
-        negative: { name: "Negative", color: "#ef4444" }
-      };
+      // Generate client colors using a deterministic color palette
+      const clientColors = [
+        "hsl(var(--chart-1))", // Blue
+        "hsl(var(--chart-2))", // Green  
+        "hsl(var(--chart-3))", // Yellow
+        "hsl(var(--chart-4))", // Red
+        "hsl(var(--chart-5))", // Purple
+        "#FF6B6B", // Coral
+        "#4ECDC4", // Teal
+        "#45B7D1", // Sky Blue
+        "#96CEB4", // Mint
+        "#FFEAA7"  // Light Yellow
+      ];
 
-      // Initialize result with all sentiment types
-      const result = Object.entries(sentimentMap).map(([key, config]) => ({
-        name: config.name,
-        value: 0,
-        color: config.color,
-        count: 0
-      }));
-
-      // Fill in actual data
-      sentimentCounts.forEach(item => {
-        const key = item.label.toLowerCase() as keyof typeof sentimentMap;
-        if (sentimentMap[key]) {
-          const sentimentIndex = result.findIndex(r => r.name === sentimentMap[key].name);
-          if (sentimentIndex >= 0) {
-            result[sentimentIndex].count = item.count;
-            result[sentimentIndex].value = Math.round((item.count / totalAnalyzed) * 100);
-          }
+      // Group by client and calculate per-client sentiment data
+      const clientData = enrichedSentimentData.reduce((acc, item) => {
+        if (!item.clientId) return acc;
+        
+        if (!acc[item.clientId]) {
+          acc[item.clientId] = {
+            clientId: item.clientId,
+            clientName: item.clientName,
+            conversations: 0,
+            emails: 0,
+            totalItems: 0,
+            sentiments: { positive: 0, neutral: 0, negative: 0 }
+          };
         }
-      });
+        
+        acc[item.clientId].totalItems++;
+        acc[item.clientId][item.contentType === 'conversation' ? 'conversations' : 'emails']++;
+        acc[item.clientId].sentiments[item.label.toLowerCase() as keyof typeof acc[typeof item.clientId]['sentiments']]++;
+        
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Create result data showing each client as a pie slice
+      const result = Object.values(clientData).map((client: any, index) => ({
+        name: `Client ${client.clientId}`,
+        value: Math.round((client.totalItems / totalAnalyzed) * 100),
+        color: clientColors[index % clientColors.length],
+        count: client.totalItems,
+        clientId: client.clientId,
+        clientName: client.clientName
+      }));
 
       // Create client breakdown for metadata using the enriched data
       const clientBreakdown = enrichedSentimentData.reduce((acc, item) => {
