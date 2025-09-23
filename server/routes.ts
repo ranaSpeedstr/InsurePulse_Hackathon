@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create result data showing each client as a pie slice
       const result = Object.values(clientData).map((client: any, index) => ({
-        name: `Client ${client.clientId}`,
+        name: client.clientName || `Client ${client.clientId}`,
         value: Math.round((client.totalItems / totalAnalyzed) * 100),
         color: clientColors[index % clientColors.length],
         count: client.totalItems,
@@ -183,10 +183,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: {
           totalAnalyzed,
           lastUpdated: new Date().toISOString(),
-          analysisTypes: sentimentCounts.map(item => ({
-            label: item.label,
-            count: item.count,
-            percentage: Math.round((item.count / totalAnalyzed) * 100)
+          analysisTypes: Object.values(clientData).map((client: any) => ({
+            label: client.clientName || `Client ${client.clientId}`,
+            count: client.totalItems,
+            percentage: Math.round((client.totalItems / totalAnalyzed) * 100)
           })),
           // Client-specific metadata
           clientBreakdown: Object.values(clientBreakdown),
@@ -253,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Routes] Generating insights for client ${clientId}${forceRefresh ? ' (force refresh)' : ''}`);
       
       // Set a timeout for the entire request (30 seconds) with proper cleanup
-      let timeoutId: NodeJS.Timeout;
+      let timeoutId: NodeJS.Timeout | undefined;
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => reject(new Error('Request timeout - insights generation took too long')), 30000);
       });
@@ -263,10 +263,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         const insights = await Promise.race([insightsPromise, timeoutPromise]);
-        clearTimeout(timeoutId); // Clean up timeout on success
+        if (timeoutId) clearTimeout(timeoutId); // Clean up timeout on success
         res.json(insights);
       } catch (error) {
-        clearTimeout(timeoutId); // Clean up timeout on failure
+        if (timeoutId) clearTimeout(timeoutId); // Clean up timeout on failure
         throw error;
       }
     } catch (error) {

@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
-import logoImage from "@assets/InsurePluselogo_1758565060236.png";
+import logoImage from "@assets/image (2)_1758607912607.png";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
