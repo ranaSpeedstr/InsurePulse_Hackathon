@@ -91,7 +91,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           metadata: {
             totalAnalyzed: 0,
             lastUpdated: new Date().toISOString(),
-            analysisTypes: [],
+            analysisTypes: [
+              { label: "Positive", count: 0, percentage: 0 },
+              { label: "Neutral", count: 0, percentage: 0 },
+              { label: "Negative", count: 0, percentage: 0 }
+            ],
             // Client-specific metadata for no data case
             clientBreakdown: [],
             totalClients: 0,
@@ -104,50 +108,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(responseData);
       }
 
-      // Generate client colors using a deterministic color palette
-      const clientColors = [
-        "hsl(var(--chart-1))", // Blue
-        "hsl(var(--chart-2))", // Green  
-        "hsl(var(--chart-3))", // Yellow
-        "hsl(var(--chart-4))", // Red
-        "hsl(var(--chart-5))", // Purple
-        "#FF6B6B", // Coral
-        "#4ECDC4", // Teal
-        "#45B7D1", // Sky Blue
-        "#96CEB4", // Mint
-        "#FFEAA7"  // Light Yellow
-      ];
-
-      // Group by client and calculate per-client sentiment data
-      const clientData = enrichedSentimentData.reduce((acc, item) => {
-        if (!item.clientId) return acc;
-        
-        if (!acc[item.clientId]) {
-          acc[item.clientId] = {
-            clientId: item.clientId,
-            clientName: item.clientName,
-            conversations: 0,
-            emails: 0,
-            totalItems: 0,
-            sentiments: { positive: 0, neutral: 0, negative: 0 }
-          };
+      // Group by sentiment type and calculate percentages
+      const sentimentCounts = enrichedSentimentData.reduce((acc, item) => {
+        const sentiment = item.label.toLowerCase();
+        if (!acc[sentiment]) {
+          acc[sentiment] = 0;
         }
-        
-        acc[item.clientId].totalItems++;
-        acc[item.clientId][item.contentType === 'conversation' ? 'conversations' : 'emails']++;
-        acc[item.clientId].sentiments[item.label.toLowerCase() as keyof typeof acc[typeof item.clientId]['sentiments']]++;
-        
+        acc[sentiment]++;
         return acc;
-      }, {} as Record<string, any>);
+      }, {} as Record<string, number>);
 
-      // Create result data showing each client as a pie slice
-      const result = Object.values(clientData).map((client: any, index) => ({
-        name: client.clientName || `Client ${client.clientId}`,
-        value: Math.round((client.totalItems / totalAnalyzed) * 100),
-        color: clientColors[index % clientColors.length],
-        count: client.totalItems,
-        clientId: client.clientId,
-        clientName: client.clientName
+      // Create result data showing sentiment distribution
+      const sentimentColors = {
+        positive: "hsl(var(--chart-2))", // Green
+        neutral: "hsl(var(--chart-3))",  // Yellow
+        negative: "hsl(var(--chart-4))"  // Red
+      };
+
+      const result = Object.entries(sentimentCounts).map(([sentiment, count]) => ({
+        name: sentiment.charAt(0).toUpperCase() + sentiment.slice(1),
+        value: Math.round((count / totalAnalyzed) * 100),
+        color: sentimentColors[sentiment as keyof typeof sentimentColors] || "hsl(var(--chart-1))",
+        count: count
       }));
 
       // Create client breakdown for metadata using the enriched data
@@ -183,10 +165,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         metadata: {
           totalAnalyzed,
           lastUpdated: new Date().toISOString(),
-          analysisTypes: Object.values(clientData).map((client: any) => ({
-            label: client.clientName || `Client ${client.clientId}`,
-            count: client.totalItems,
-            percentage: Math.round((client.totalItems / totalAnalyzed) * 100)
+          analysisTypes: result.map(item => ({
+            label: item.name,
+            count: item.count,
+            percentage: item.value
           })),
           // Client-specific metadata
           clientBreakdown: Object.values(clientBreakdown),
@@ -203,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      console.log(`[Routes] Client-based sentiment distribution: ${totalAnalyzed} total analyzed from ${Object.keys(clientBreakdown).length} clients`);
+      console.log(`[Routes] Sentiment distribution: ${totalAnalyzed} total analyzed - ${Object.entries(sentimentCounts).map(([sentiment, count]) => `${sentiment}: ${count}`).join(', ')}`);
       res.json(responseData);
     } catch (error) {
       console.error("Error fetching sentiment distribution:", error);
