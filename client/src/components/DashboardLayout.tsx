@@ -104,7 +104,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <div>
             <h1 className="font-bold text-foreground text-xl tracking-tight">InsurePulse</h1>
-            <p className="text-xs text-muted-foreground">Client Analytics Dashboard</p>
+            <p className="text-xs text-muted-foreground">Turning emotion into Retention
+</p>
           </div>
         </motion.div>
         
@@ -125,7 +126,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </Button>
         </motion.div>
       </motion.header>
-
       {/* Tabs Navigation */}
       <Tabs value={currentTab} onValueChange={handleTabChange} className="flex flex-col flex-1">
         {/* Sticky Tabs Container */}
