@@ -55,6 +55,14 @@ interface CSVForecastResult {
     riskScoreChange: number;
     sentimentImprovement: string;
   };
+  forecast?: {
+    sentimentTrend: Array<{date: string, value: number}>;
+    churnRiskTrend: Array<{date: string, value: number}>;
+    dateRange: {
+      start: string;
+      end: string;
+    };
+  };
 }
 
 export class ForecastService {
@@ -312,9 +320,123 @@ export class ForecastService {
    */
   public getCSVClientForecast(clientId: string): CSVForecastResult | null {
     const client = this.clientCSVData.find(c => c.Client_ID === clientId);
-    if (!client) return null;
+    if (!client) {
+      console.log(`[ForecastService] Client ${clientId} not found in CSV data`);
+      return null;
+    }
     
-    return this.calculate6MonthForecast(client);
+    console.log(`[ForecastService] Generating forecast with trend data for client ${clientId}`);
+    const basicForecast = this.calculate6MonthForecast(client);
+    
+    // Add trend data from September 2025 to February 2026
+    console.log(`[ForecastService] Calling generateForecastTrend for client ${clientId}`);
+    const trendData = this.generateForecastTrend(client);
+    
+    const result = {
+      ...basicForecast,
+      forecast: {
+        sentimentTrend: trendData.sentimentTrend,
+        churnRiskTrend: trendData.churnRiskTrend,
+        dateRange: {
+          start: '2025-09-01',
+          end: '2026-02-28'
+        }
+      }
+    };
+    
+    console.log(`[ForecastService] Forecast result includes ${trendData.sentimentTrend.length} sentiment data points and ${trendData.churnRiskTrend.length} churn data points`);
+    return result;
+  }
+
+  /**
+   * Generate weekly forecast trend from September 2025 to February 2026
+   */
+  private generateForecastTrend(client: ClientCSVData) {
+    const startDate = new Date('2025-09-01');
+    const endDate = new Date('2026-02-28');
+    
+    const sentimentTrend: Array<{date: string, value: number}> = [];
+    const churnRiskTrend: Array<{date: string, value: number}> = [];
+    
+    // Calculate current and forecasted values
+    const currentSTI = this.calculateSentimentTrendIndex(client);
+    const currentCRP = this.calculateChurnRiskProbability(client);
+    
+    // Calculate forecasted values (6 months out)
+    const forecastedClient = this.createForecastedClient(client);
+    const forecastedSTI = this.calculateSentimentTrendIndex(forecastedClient);
+    const forecastedCRP = this.calculateChurnRiskProbability(forecastedClient, client.Renewal_Rate < 70 ? 12 : 8);
+    
+    // Generate weekly data points with smooth progression
+    const currentDate = new Date(startDate);
+    const totalWeeks = Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    
+    console.log(`\n🗓️ Generating trend from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]} (${totalWeeks} weeks)`);
+    console.log(`📈 STI progression: ${currentSTI.toFixed(2)} → ${forecastedSTI.toFixed(2)}`);
+    console.log(`📊 CRP progression: ${currentCRP.toFixed(2)}% → ${forecastedCRP.toFixed(2)}%`);
+    
+    for (let week = 0; week <= totalWeeks; week++) {
+      const date = new Date(currentDate);
+      date.setDate(date.getDate() + (week * 7));
+      
+      if (date > endDate) break;
+      
+      // Calculate progress ratio (0 to 1)
+      const progress = week / totalWeeks;
+      
+      // Add some realistic variability
+      const randomVariation = (Math.random() - 0.5) * 3; // ±1.5 point variation
+      const seasonalFactor = Math.sin((week / 52) * 2 * Math.PI) * 2; // Seasonal variation
+      
+      // Interpolate between current and forecasted values
+      const interpolatedSTI = currentSTI + (forecastedSTI - currentSTI) * progress + randomVariation + seasonalFactor;
+      const interpolatedCRP = currentCRP + (forecastedCRP - currentCRP) * progress + (randomVariation * 0.5);
+      
+      // Ensure values stay within realistic bounds
+      const boundedSTI = Math.max(0, Math.min(100, interpolatedSTI));
+      const boundedCRP = Math.max(0, Math.min(100, interpolatedCRP));
+      
+      sentimentTrend.push({
+        date: date.toISOString().split('T')[0],
+        value: boundedSTI
+      });
+      
+      churnRiskTrend.push({
+        date: date.toISOString().split('T')[0],
+        value: boundedCRP
+      });
+    }
+    
+    console.log(`✅ Generated ${sentimentTrend.length} data points for trend analysis`);
+    
+    return {
+      sentimentTrend,
+      churnRiskTrend
+    };
+  }
+
+  /**
+   * Create forecasted client data with improvements
+   */
+  private createForecastedClient(client: ClientCSVData): ClientCSVData {
+    const responseImprovement = client.Avg_Response_Days * 0.15;
+    const deliveryImprovement = client.Avg_Delivery_Days * 0.15;
+    const supportScoreImprovement = client.Escalations > 0 ? 6 : 3;
+    const escalationReduction = Math.max(0, client.Escalations - 1);
+    const backlogReduction = Math.max(1, client.Backlog * 0.7);
+    const renewalRateImprovement = client.Renewal_Rate < 70 ? 12 : 8;
+    const riskScoreReduction = 15;
+    
+    return {
+      ...client,
+      Avg_Response_Days: client.Avg_Response_Days - responseImprovement,
+      Avg_Delivery_Days: client.Avg_Delivery_Days - deliveryImprovement,
+      Support_Score: Math.min(100, client.Support_Score + supportScoreImprovement),
+      Escalations: escalationReduction,
+      Backlog: backlogReduction,
+      Renewal_Rate: Math.min(95, client.Renewal_Rate + renewalRateImprovement),
+      Risk_Score: Math.max(30, client.Risk_Score - riskScoreReduction)
+    };
   }
 
   /**
