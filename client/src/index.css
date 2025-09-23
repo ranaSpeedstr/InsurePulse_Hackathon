@@ -26,21 +26,21 @@
 
   --card-border: 220 13% 90%;
 
-  --sidebar: 220 8% 94%;
+  --sidebar: 220 15% 96%;
 
-  --sidebar-foreground: 220 15% 15%;
+  --sidebar-foreground: 220 20% 12%;
 
-  --sidebar-border: 220 10% 88%;
+  --sidebar-border: 220 15% 85%;
 
-  --sidebar-primary: 210 100% 55%;
+  --sidebar-primary: 210 100% 58%;
 
   --sidebar-primary-foreground: 0 0% 98%;
 
-  --sidebar-accent: 220 10% 90%;
+  --sidebar-accent: 330 45% 88%;
 
-  --sidebar-accent-foreground: 220 15% 20%;
+  --sidebar-accent-foreground: 330 25% 15%;
 
-  --sidebar-ring: 210 100% 55%;
+  --sidebar-ring: 210 100% 58%;
 
   --popover: 0 0% 94%;
 
@@ -48,52 +48,52 @@
 
   --popover-border: 220 13% 88%;
 
-  --primary: 210 100% 55%;
+  --primary: 210 100% 58%;
 
   --primary-foreground: 0 0% 98%;
 
-  --secondary: 220 10% 88%;
+  --secondary: 280 35% 75%;
 
-  --secondary-foreground: 220 15% 20%;
+  --secondary-foreground: 280 25% 15%;
 
-  --muted: 220 12% 92%;
+  --muted: 240 15% 90%;
 
-  --muted-foreground: 220 8% 45%;
+  --muted-foreground: 240 8% 40%;
 
-  --accent: 217 15% 90%;
+  --accent: 330 65% 85%;
 
-  --accent-foreground: 220 15% 20%;
+  --accent-foreground: 330 35% 15%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 85% 62%;
 
   --destructive-foreground: 0 0% 98%;
 
-  --input: 220 13% 75%;
-  --ring: 210 100% 55%;
-  --chart-1: 210 100% 45%;
-  --chart-2: 142 76% 36%;
-  --chart-3: 45 93% 50%;
-  --chart-4: 0 84% 60%;
-  --chart-5: 280 65% 60%;
+  --input: 220 18% 70%;
+  --ring: 210 100% 58%;
+  --chart-1: 210 100% 55%;
+  --chart-2: 142 80% 42%;
+  --chart-3: 45 95% 55%;
+  --chart-4: 0 85% 62%;
+  --chart-5: 280 70% 65%;
 
   /* Chart gradient colors for enhanced visuals */
-  --chart-gradient-1-start: 210 100% 50%;
-  --chart-gradient-1-end: 210 100% 35%;
-  --chart-gradient-2-start: 142 76% 45%;
-  --chart-gradient-2-end: 142 76% 28%;
-  --chart-gradient-3-start: 45 93% 55%;
-  --chart-gradient-3-end: 45 93% 40%;
-  --chart-gradient-4-start: 0 84% 65%;
-  --chart-gradient-4-end: 0 84% 45%;
-  --chart-gradient-5-start: 280 65% 65%;
-  --chart-gradient-5-end: 280 65% 45%;
+  --chart-gradient-1-start: 210 100% 60%;
+  --chart-gradient-1-end: 210 100% 40%;
+  --chart-gradient-2-start: 142 80% 50%;
+  --chart-gradient-2-end: 142 80% 30%;
+  --chart-gradient-3-start: 45 95% 60%;
+  --chart-gradient-3-end: 45 95% 45%;
+  --chart-gradient-4-start: 0 85% 68%;
+  --chart-gradient-4-end: 0 85% 48%;
+  --chart-gradient-5-start: 280 70% 70%;
+  --chart-gradient-5-end: 280 70% 50%;
 
   /* Chart glow effects */
-  --chart-glow-1: 210 100% 50%;
-  --chart-glow-2: 142 76% 45%;
-  --chart-glow-3: 45 93% 55%;
-  --chart-glow-4: 0 84% 65%;
-  --chart-glow-5: 280 65% 65%;
+  --chart-glow-1: 210 100% 58%;
+  --chart-glow-2: 142 80% 50%;
+  --chart-glow-3: 45 95% 60%;
+  --chart-glow-4: 0 85% 68%;
+  --chart-glow-5: 280 70% 70%;
 
   /* Chart container backgrounds */
   --chart-container-bg: 0 0% 97%;
@@ -107,14 +107,14 @@
   --metric-gradient-neutral: 220 10% 88%;
 
   /* Layout gradient colors */
-  --sidebar-gradient-start: 220 8% 96%;
-  --sidebar-gradient-end: 220 10% 94%;
-  --sidebar-logo-gradient-start: 210 100% 58%;
-  --sidebar-logo-gradient-end: 210 100% 45%;
+  --sidebar-gradient-start: 220 20% 98%;
+  --sidebar-gradient-end: 280 15% 94%;
+  --sidebar-logo-gradient-start: 210 100% 62%;
+  --sidebar-logo-gradient-end: 280 70% 55%;
   --header-gradient-start: 0 0% 99%;
-  --header-gradient-end: 220 8% 96%;
+  --header-gradient-end: 330 25% 96%;
   --main-gradient-start: 0 0% 99%;
-  --main-gradient-end: 220 5% 97%;
+  --main-gradient-end: 240 10% 97%;
 
   /* Animation timing variables */
   --animation-fast: 0.15s;

@@ -65,54 +65,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .from(sentiment_analysis);
 
-      // Enrich with client data by looking up conversations and emails separately
-      const enrichedSentimentData = [];
-      for (const item of sentimentWithClients) {
-        let clientId = null;
-        let clientName = 'Unknown Client';
+      // More efficient approach: Use JOINs to get client data in fewer queries
+      let enrichedSentimentData = [];
+      
+      // Get conversations with client data in one query
+      const conversationSentiment = await db
+        .select({
+          sentimentId: sentiment_analysis.id,
+          label: sentiment_analysis.sentiment_label,
+          contentType: sentiment_analysis.content_type,
+          analysisMethod: sentiment_analysis.analysis_method,
+          confidence: sentiment_analysis.confidence,
+          createdAt: sentiment_analysis.created_at,
+          contentId: sentiment_analysis.content_id,
+          clientId: conversations.client_id,
+          clientName: clients.primary_contact,
+        })
+        .from(sentiment_analysis)
+        .innerJoin(conversations, eq(sentiment_analysis.content_id, conversations.id))
+        .innerJoin(clients, eq(conversations.client_id, clients.client_id))
+        .where(eq(sentiment_analysis.content_type, 'conversation'));
 
-        if (item.contentType === 'conversation') {
-          const conv = await db.select({ client_id: conversations.client_id })
-            .from(conversations)
-            .where(eq(conversations.id, item.contentId))
-            .limit(1);
-          if (conv.length > 0) {
-            clientId = conv[0].client_id;
-            
-            // Get client name
-            const client = await db.select({ primary_contact: clients.primary_contact })
-              .from(clients)
-              .where(eq(clients.client_id, clientId))
-              .limit(1);
-            if (client.length > 0) {
-              clientName = client[0].primary_contact;
-            }
-          }
-        } else if (item.contentType === 'email') {
-          const email = await db.select({ client_id: emails.client_id })
-            .from(emails)
-            .where(eq(emails.id, item.contentId))
-            .limit(1);
-          if (email.length > 0 && email[0].client_id) {
-            clientId = email[0].client_id;
-            
-            // Get client name
-            const client = await db.select({ primary_contact: clients.primary_contact })
-              .from(clients)
-              .where(eq(clients.client_id, clientId))
-              .limit(1);
-            if (client.length > 0) {
-              clientName = client[0].primary_contact;
-            }
-          }
-        }
+      // Get email sentiment with client data in one query  
+      const emailSentiment = await db
+        .select({
+          sentimentId: sentiment_analysis.id,
+          label: sentiment_analysis.sentiment_label,
+          contentType: sentiment_analysis.content_type,
+          analysisMethod: sentiment_analysis.analysis_method,
+          confidence: sentiment_analysis.confidence,
+          createdAt: sentiment_analysis.created_at,
+          contentId: sentiment_analysis.content_id,
+          clientId: emails.client_id,
+          clientName: clients.primary_contact,
+        })
+        .from(sentiment_analysis)
+        .innerJoin(emails, eq(sentiment_analysis.content_id, emails.id))
+        .innerJoin(clients, eq(emails.client_id, clients.client_id))
+        .where(eq(sentiment_analysis.content_type, 'email'));
 
-        enrichedSentimentData.push({
-          ...item,
-          clientId,
-          clientName
-        });
-      }
+      // Combine both results
+      enrichedSentimentData = [...conversationSentiment, ...emailSentiment];
 
       // Calculate totals and percentages
       const totalAnalyzed = sentimentCounts.reduce((sum, item) => sum + item.count, 0);
@@ -170,8 +163,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Create client breakdown for metadata
-      const clientBreakdown = sentimentWithClients.reduce((acc, item) => {
+      // Create client breakdown for metadata using the enriched data
+      const clientBreakdown = enrichedSentimentData.reduce((acc, item) => {
         if (!item.clientId) return acc;
         
         if (!acc[item.clientId]) {
@@ -193,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, {} as Record<string, any>);
 
       // Get recent activity (last 24 hours)
-      const recentActivity = sentimentWithClients.filter(item => 
+      const recentActivity = enrichedSentimentData.filter(item => 
         item.createdAt && new Date(item.createdAt).getTime() > Date.now() - 24 * 60 * 60 * 1000
       ).length;
 
@@ -213,12 +206,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalClients: Object.keys(clientBreakdown).length,
           recentActivity,
           sources: {
-            conversations: sentimentWithClients.filter(s => s.contentType === 'conversation').length,
-            emails: sentimentWithClients.filter(s => s.contentType === 'email').length
+            conversations: enrichedSentimentData.filter(s => s.contentType === 'conversation').length,
+            emails: enrichedSentimentData.filter(s => s.contentType === 'email').length
           },
           averageConfidence: Math.round(
-            sentimentWithClients.reduce((sum, item) => sum + (item.confidence || 0), 0) / 
-            sentimentWithClients.length * 100
+            enrichedSentimentData.reduce((sum, item) => sum + (item.confidence || 0), 0) / 
+            enrichedSentimentData.length * 100
           ) / 100 || 0
         }
       };

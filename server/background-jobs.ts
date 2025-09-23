@@ -173,11 +173,11 @@ class BackgroundJobProcessor {
   }
 
   private startEmailFetching() {
-    console.log('[BackgroundJobs] Email fetching temporarily disabled due to IMAP issues');
+    console.log('[BackgroundJobs] Starting email fetching from csdinsure@gmail.com');
     
-    // TODO: Re-enable once IMAP search issue is resolved
-    // this.fetchEmails();
-    // this.emailInterval = setInterval(() => this.fetchEmails(), 15 * 60 * 1000);
+    // Start email fetching immediately and then every 15 minutes
+    this.fetchEmails();
+    this.emailInterval = setInterval(() => this.fetchEmails(), 15 * 60 * 1000);
   }
 
   private startClustering() {
@@ -243,21 +243,45 @@ class BackgroundJobProcessor {
       const year = yesterday.getFullYear();
       const formattedDate = `${day}-${month}-${year}`;
       
-      const searchCriteria = ['SINCE', formattedDate];
-      const fetchOptions = {
-        bodies: ['HEADER', 'TEXT'],
-        markSeen: false
-      };
-
-      const messages = await connection.search(searchCriteria, fetchOptions);
-      console.log(`[BackgroundJobs] Found ${messages.length} recent emails from ${emailAddress}`);
-
-      for (const message of messages) {
+      // Use proper IMAP search criteria format for imap-simple library
+      // Try different formats - imap-simple may expect nested arrays or string format
+      let messages;
+      try {
+        // Try nested array format first
+        messages = await connection.search([['SINCE', formattedDate]], {
+          bodies: ['HEADER', 'TEXT'],
+          markSeen: false
+        });
+      } catch (firstError: any) {
+        console.log(`[BackgroundJobs] First IMAP search format failed, trying alternative:`, firstError?.message || firstError);
         try {
-          await this.processEmail(message, emailAddress);
-        } catch (error) {
-          console.error('[BackgroundJobs] Error processing individual email:', error);
+          // Try simple format without nested arrays
+          messages = await connection.search(['SINCE', formattedDate], {
+            bodies: ['HEADER', 'TEXT'], 
+            markSeen: false
+          });
+        } catch (secondError: any) {
+          console.log(`[BackgroundJobs] Second IMAP search format failed, trying simple recent search:`, secondError?.message || secondError);
+          // Fallback to recent emails without date filter
+          messages = await connection.search(['ALL'], {
+            bodies: ['HEADER', 'TEXT'],
+            markSeen: false
+          });
         }
+      }
+      
+      if (messages && Array.isArray(messages)) {
+        console.log(`[BackgroundJobs] Found ${messages.length} recent emails from ${emailAddress}`);
+
+        for (const message of messages) {
+          try {
+            await this.processEmail(message, emailAddress);
+          } catch (error) {
+            console.error('[BackgroundJobs] Error processing individual email:', error);
+          }
+        }
+      } else {
+        console.log(`[BackgroundJobs] No messages found or invalid response format`);
       }
 
       connection.end();
@@ -537,11 +561,26 @@ class BackgroundJobProcessor {
       }
       
       const numClusters = Math.min(3, Math.max(1, vectors.length)); // Ensure k >= 1
-      const kmeansModule = await import('ml-kmeans');
-      const kmeans = kmeansModule.default ?? kmeansModule;
       
-      if (typeof kmeans !== 'function') {
-        throw new Error('Failed to import kmeans function from ml-kmeans');
+      // Try different import strategies for ml-kmeans
+      let kmeans: any;
+      try {
+        const kmeansModule = await import('ml-kmeans');
+        
+        // Try different ways to access kmeans function
+        if (typeof kmeansModule.default === 'function') {
+          kmeans = kmeansModule.default;
+        } else if (typeof (kmeansModule as any).kmeans === 'function') {
+          kmeans = (kmeansModule as any).kmeans;
+        } else if (typeof (kmeansModule as any).KMeans === 'function') {
+          kmeans = (kmeansModule as any).KMeans;
+        } else {
+          console.log('[BackgroundJobs] Available kmeans exports:', Object.keys(kmeansModule));
+          throw new Error('Could not find kmeans function in ml-kmeans module');
+        }
+      } catch (importError) {
+        console.error('[BackgroundJobs] Failed to import ml-kmeans, skipping clustering:', importError);
+        return;
       }
       
       const clusters = kmeans(vectors, numClusters, { initialization: 'random' });
