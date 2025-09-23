@@ -562,6 +562,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // CSV-based forecast routes
+  app.get("/api/forecast-csv/all", async (req, res) => {
+    try {
+      const forecasts = forecastService.getCSVClientForecasts();
+      res.json(forecasts);
+    } catch (error) {
+      console.error("Error fetching CSV forecasts:", error);
+      res.status(500).json({ error: "Failed to fetch CSV forecasts" });
+    }
+  });
+
+  app.get("/api/forecast-csv/summary", async (req, res) => {
+    try {
+      const summary = forecastService.getCSVForecastSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching CSV forecast summary:", error);
+      res.status(500).json({ error: "Failed to fetch CSV forecast summary" });
+    }
+  });
+
+  app.get("/api/forecast-csv/:clientId", async (req, res) => {
+    try {
+      const { clientId } = req.params;
+      const forecast = forecastService.getCSVClientForecast(clientId);
+      
+      if (!forecast) {
+        return res.status(404).json({ error: "Client not found in CSV data" });
+      }
+      
+      res.json(forecast);
+    } catch (error) {
+      console.error("Error fetching CSV forecast for client:", error);
+      res.status(500).json({ error: "Failed to fetch CSV forecast for client" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -2,6 +2,8 @@ import OpenAI from 'openai';
 import { db } from './db';
 import { client_time_series, forecast_predictions, clients } from '../shared/schema';
 import { eq, desc, gte, and } from 'drizzle-orm';
+import fs from 'fs';
+import path from 'path';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,8 +20,254 @@ interface ForecastResult {
   insight: string;
 }
 
+interface ClientCSVData {
+  Client_ID: string;
+  Avg_Response_Days: number;
+  Avg_Delivery_Days: number;
+  Escalations: number;
+  Delivered: number;
+  Backlog: number;
+  Support_Score: number;
+  Renewal_Rate: number;
+  Policy_Lapse_Count: number;
+  Competitor_Quotes_Requested: number;
+  Risk_Score: number;
+}
+
+interface CSVForecastResult {
+  clientId: string;
+  current: {
+    sentimentTrendIndex: number;
+    churnRiskProbability: number;
+    renewalRate: number;
+    riskScore: number;
+    sentimentTrend: string;
+  };
+  forecast6Months: {
+    sentimentTrendIndex: number;
+    churnRiskProbability: number;
+    renewalRate: number;
+    riskScore: number;
+    sentimentTrend: string;
+  };
+  improvements: {
+    renewalRateChange: number;
+    riskScoreChange: number;
+    sentimentImprovement: string;
+  };
+}
+
 export class ForecastService {
-  
+  private clientCSVData: ClientCSVData[] = [];
+
+  constructor() {
+    this.loadCSVData();
+  }
+
+  /**
+   * Load client data from CSV files
+   */
+  private loadCSVData() {
+    try {
+      // Load aggregated results
+      const aggregatedPath = path.join(process.cwd(), 'attached_assets', 'INSURAI Hackathon- aggregated client results_1758520699335.csv');
+      const aggregatedContent = fs.readFileSync(aggregatedPath, 'utf-8');
+      
+      // Load retention and churn signals
+      const retentionPath = path.join(process.cwd(), 'attached_assets', 'INSURAI Hackathon- retention and Churn signals_1758520699334.csv');
+      const retentionContent = fs.readFileSync(retentionPath, 'utf-8');
+      
+      // Parse CSV data
+      const aggregatedLines = aggregatedContent.split('\n').slice(1).filter(line => line.trim());
+      const retentionLines = retentionContent.split('\n').slice(1).filter(line => line.trim());
+      
+      // Combine data
+      this.clientCSVData = aggregatedLines.map(line => {
+        const [clientId, avgResponseDays, avgDeliveryDays, escalations, delivered, backlog, supportScore] = line.split(',').map(val => val.trim());
+        
+        // Find corresponding retention data
+        const retentionLine = retentionLines.find(retLine => retLine.startsWith(clientId + ','));
+        if (!retentionLine) return null;
+        
+        const [, renewalRate, policyLapseCount, competitorQuotes, riskScore] = retentionLine.split(',').map(val => val.trim());
+        
+        return {
+          Client_ID: clientId,
+          Avg_Response_Days: parseFloat(avgResponseDays),
+          Avg_Delivery_Days: parseFloat(avgDeliveryDays),
+          Escalations: parseInt(escalations),
+          Delivered: parseInt(delivered),
+          Backlog: parseInt(backlog),
+          Support_Score: parseInt(supportScore),
+          Renewal_Rate: parseInt(renewalRate),
+          Policy_Lapse_Count: parseInt(policyLapseCount),
+          Competitor_Quotes_Requested: parseInt(competitorQuotes),
+          Risk_Score: parseInt(riskScore)
+        };
+      }).filter(Boolean) as ClientCSVData[];
+      
+      console.log(`[ForecastService] Loaded ${this.clientCSVData.length} client records from CSV`);
+    } catch (error) {
+      console.error('[ForecastService] Error loading CSV data:', error);
+      this.clientCSVData = [];
+    }
+  }
+
+  /**
+   * Calculate Sentiment Trend Index (STI)
+   * STI = (0.4 × Support_Score) - (0.2 × Avg_Response_Days) - (0.2 × Avg_Delivery_Days) - (5 × Escalations) + (3 × Delivered/Backlog_Ratio)
+   */
+  private calculateSentimentTrendIndex(client: ClientCSVData): number {
+    const deliveredBacklogRatio = client.Backlog > 0 ? client.Delivered / client.Backlog : client.Delivered;
+    
+    const sti = (0.4 * client.Support_Score) 
+                - (0.2 * client.Avg_Response_Days) 
+                - (0.2 * client.Avg_Delivery_Days) 
+                - (5 * client.Escalations) 
+                + (3 * deliveredBacklogRatio);
+    
+    // Normalize to 0-100 scale
+    return Math.max(0, Math.min(100, sti));
+  }
+
+  /**
+   * Calculate Churn Risk Probability (CRP)
+   * CRP = Base_Risk + (0.5 × Policy_Lapse_Rate) + (0.3 × Competitor_Quotes_Rate) - (0.4 × Renewal_Rate_Improvement)
+   */
+  private calculateChurnRiskProbability(client: ClientCSVData, renewalRateImprovement: number = 0): number {
+    const baseRisk = client.Risk_Score / 100;
+    const policyLapseRate = client.Policy_Lapse_Count / 100;
+    const competitorQuotesRate = client.Competitor_Quotes_Requested / 100;
+    
+    const crp = baseRisk 
+                + (0.5 * policyLapseRate) 
+                + (0.3 * competitorQuotesRate) 
+                - (0.4 * renewalRateImprovement / 100);
+    
+    return Math.max(0, Math.min(1, crp)) * 100;
+  }
+
+  /**
+   * Determine sentiment trend based on STI score
+   */
+  private getSentimentTrend(sti: number): string {
+    if (sti >= 80) return 'Strong Positive';
+    if (sti >= 65) return 'Positive';
+    if (sti >= 50) return 'Balanced Positive';
+    if (sti >= 35) return 'Neutral';
+    if (sti >= 20) return 'Cautiously Positive';
+    return 'Negative';
+  }
+
+  /**
+   * Calculate 6-month forecast for a client
+   */
+  private calculate6MonthForecast(client: ClientCSVData): CSVForecastResult {
+    // Current metrics
+    const currentSTI = this.calculateSentimentTrendIndex(client);
+    const currentCRP = this.calculateChurnRiskProbability(client);
+    
+    // 6-month improvements based on assumptions
+    const responseImprovement = client.Avg_Response_Days * 0.15; // 2-3% monthly * 6 months ≈ 15%
+    const deliveryImprovement = client.Avg_Delivery_Days * 0.15;
+    const supportScoreImprovement = client.Escalations > 0 ? 6 : 3; // 1-2 pts/month * 6 months
+    const escalationReduction = Math.max(0, client.Escalations - 1);
+    const backlogReduction = Math.max(1, client.Backlog * 0.7); // 30% backlog reduction
+    const renewalRateImprovement = client.Renewal_Rate < 70 ? 12 : 8; // Higher improvement for lower performers
+    const riskScoreReduction = 15; // 2-3 pts/month * 6 months
+    
+    // Create forecasted client data
+    const forecastedClient: ClientCSVData = {
+      ...client,
+      Avg_Response_Days: client.Avg_Response_Days - responseImprovement,
+      Avg_Delivery_Days: client.Avg_Delivery_Days - deliveryImprovement,
+      Support_Score: Math.min(100, client.Support_Score + supportScoreImprovement),
+      Escalations: escalationReduction,
+      Backlog: backlogReduction,
+      Renewal_Rate: Math.min(95, client.Renewal_Rate + renewalRateImprovement),
+      Risk_Score: Math.max(30, client.Risk_Score - riskScoreReduction)
+    };
+    
+    // Calculate forecasted metrics
+    const forecastedSTI = this.calculateSentimentTrendIndex(forecastedClient);
+    const forecastedCRP = this.calculateChurnRiskProbability(forecastedClient, renewalRateImprovement);
+    
+    return {
+      clientId: client.Client_ID,
+      current: {
+        sentimentTrendIndex: currentSTI,
+        churnRiskProbability: currentCRP,
+        renewalRate: client.Renewal_Rate,
+        riskScore: client.Risk_Score,
+        sentimentTrend: this.getSentimentTrend(currentSTI)
+      },
+      forecast6Months: {
+        sentimentTrendIndex: forecastedSTI,
+        churnRiskProbability: forecastedCRP,
+        renewalRate: forecastedClient.Renewal_Rate,
+        riskScore: forecastedClient.Risk_Score,
+        sentimentTrend: this.getSentimentTrend(forecastedSTI)
+      },
+      improvements: {
+        renewalRateChange: renewalRateImprovement,
+        riskScoreChange: riskScoreReduction,
+        sentimentImprovement: `${this.getSentimentTrend(currentSTI)} → ${this.getSentimentTrend(forecastedSTI)}`
+      }
+    };
+  }
+
+  /**
+   * Get CSV-based forecast for all clients
+   */
+  public getCSVClientForecasts(): CSVForecastResult[] {
+    return this.clientCSVData.map(client => this.calculate6MonthForecast(client));
+  }
+
+  /**
+   * Get CSV-based forecast for a specific client
+   */
+  public getCSVClientForecast(clientId: string): CSVForecastResult | null {
+    const client = this.clientCSVData.find(c => c.Client_ID === clientId);
+    if (!client) return null;
+    
+    return this.calculate6MonthForecast(client);
+  }
+
+  /**
+   * Get CSV forecast summary statistics
+   */
+  public getCSVForecastSummary() {
+    const forecasts = this.getCSVClientForecasts();
+    
+    const currentAvgRenewal = forecasts.reduce((sum, f) => sum + f.current.renewalRate, 0) / forecasts.length;
+    const forecastedAvgRenewal = forecasts.reduce((sum, f) => sum + f.forecast6Months.renewalRate, 0) / forecasts.length;
+    
+    const currentAvgRisk = forecasts.reduce((sum, f) => sum + f.current.riskScore, 0) / forecasts.length;
+    const forecastedAvgRisk = forecasts.reduce((sum, f) => sum + f.forecast6Months.riskScore, 0) / forecasts.length;
+    
+    const highRiskClients = forecasts.filter(f => f.current.riskScore >= 80).length;
+    const improvedClients = forecasts.filter(f => f.forecast6Months.renewalRate > f.current.renewalRate).length;
+    
+    return {
+      totalClients: forecasts.length,
+      currentMetrics: {
+        averageRenewalRate: Math.round(currentAvgRenewal),
+        averageRiskScore: Math.round(currentAvgRisk),
+        highRiskClients
+      },
+      forecastedMetrics: {
+        averageRenewalRate: Math.round(forecastedAvgRenewal),
+        averageRiskScore: Math.round(forecastedAvgRisk),
+        clientsWithImprovement: improvedClients
+      },
+      improvements: {
+        renewalRateImprovement: Math.round(forecastedAvgRenewal - currentAvgRenewal),
+        riskScoreReduction: Math.round(currentAvgRisk - forecastedAvgRisk),
+        percentageImproved: Math.round((improvedClients / forecasts.length) * 100)
+      }
+    };
+  }
+
   /**
    * Generate sentiment forecast for a client using OpenAI
    */
