@@ -523,3 +523,13 @@
     transform: rotate(360deg) scale(1);
   }
 }
+
+/* Custom utilities for improved tabs UI */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;           /* Chrome, Safari, and Opera */
+}
