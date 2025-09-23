@@ -68,6 +68,14 @@
 
   --destructive-foreground: 0 0% 98%;
 
+  /* Risk level colors */
+  --risk-high: 0 72% 40%;
+  --risk-high-foreground: 0 0% 98%;
+  --risk-medium: 25 90% 40%;
+  --risk-medium-foreground: 0 0% 98%;
+  --risk-low: 120 55% 32%;
+  --risk-low-foreground: 0 0% 98%;
+
   --input: 220 18% 70%;
   --ring: 210 100% 58%;
   --chart-1: 210 100% 55%;
@@ -233,6 +241,14 @@
   --destructive: 0 84% 60%;
 
   --destructive-foreground: 0 0% 98%;
+
+  /* Risk level colors for dark mode */
+  --risk-high: 0 72% 42%;
+  --risk-high-foreground: 0 0% 98%;
+  --risk-medium: 25 90% 42%;
+  --risk-medium-foreground: 0 0% 98%;
+  --risk-low: 120 55% 38%;
+  --risk-low-foreground: 0 0% 98%;
 
   /* Used as the border around inputs. Dark mode: Should be a border that is light enough to have high contrast when rendered on a --card background. More contrast than standard --border */
   --input: 220 13% 35%;

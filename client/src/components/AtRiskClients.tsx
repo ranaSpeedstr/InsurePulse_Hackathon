@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SkeletonList } from "@/components/ui/skeletons";
 import { AlertTriangle, Eye } from "lucide-react";
@@ -20,15 +19,15 @@ interface AtRiskClientsProps {
 const getRiskLevel = (score: number) => {
   if (score >= 80) return { 
     label: "High", 
-    variant: "destructive" as const
+    className: "bg-[hsl(var(--risk-high))] text-[hsl(var(--risk-high-foreground))] hover-elevate"
   };
   if (score >= 60) return { 
     label: "Medium", 
-    variant: "default" as const
+    className: "bg-[hsl(var(--risk-medium))] text-[hsl(var(--risk-medium-foreground))] hover-elevate"
   };
   return { 
     label: "Low", 
-    variant: "secondary" as const
+    className: "bg-[hsl(var(--risk-low))] text-[hsl(var(--risk-low-foreground))] hover-elevate"
   };
 };
 
@@ -83,12 +82,12 @@ export default function AtRiskClients({ clients, isLoading = false, onClientActi
                 </div>
                 
                 <div className="flex items-center gap-3">
-                  <Badge 
-                    variant={risk.variant}
+                  <div 
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${risk.className}`}
                     data-testid={`risk-${client.id}`}
                   >
                     {risk.label}
-                  </Badge>
+                  </div>
                   
                   <Button
                     size="sm"
