@@ -98,14 +98,15 @@ function SentimentChartSkeleton() {
 
 // Custom Cell component with hover effects
 function AnimatedCell({ fill, name, isActive, onHover, onLeave, instanceId, prefersReducedMotion, ...props }: any) {
-  const gradientColors = GRADIENT_COLORS[name as keyof typeof GRADIENT_COLORS];
+  // Use the fill color directly from the API response
+  const baseColor = fill;
   
   return (
     <g>
       <defs>
         <radialGradient id={`gradient-${name}-${instanceId}`} cx="30%" cy="30%">
-          <stop offset="0%" stopColor={gradientColors?.start || fill} />
-          <stop offset="100%" stopColor={gradientColors?.end || fill} />
+          <stop offset="0%" stopColor={baseColor} />
+          <stop offset="100%" stopColor={baseColor} />
         </radialGradient>
         <filter id={`glow-${name}-${instanceId}`}>
           <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -117,10 +118,10 @@ function AnimatedCell({ fill, name, isActive, onHover, onLeave, instanceId, pref
       </defs>
       <motion.path
         {...props}
-        fill={`url(#gradient-${name}-${instanceId})`}
+        fill={baseColor}
         filter={isActive ? `url(#glow-${name}-${instanceId})` : undefined}
         style={{
-          filter: isActive ? `drop-shadow(0 0 8px ${gradientColors?.glow})` : undefined,
+          filter: isActive ? `drop-shadow(0 0 8px ${baseColor}50)` : undefined,
           transformOrigin: "center",
           cursor: "pointer"
         }}
@@ -154,7 +155,8 @@ function AnimatedLegend({ payload, hoveredSegment, onSegmentHover, onSegmentLeav
     >
       {payload?.map((entry: any, index: number) => {
         const isHovered = hoveredSegment === entry.value;
-        const gradientColors = GRADIENT_COLORS[entry.value as keyof typeof GRADIENT_COLORS];
+        // Use the color from the API response
+        const entryColor = entry.color || entry.fill;
         
         return (
           <motion.div
@@ -177,12 +179,12 @@ function AnimatedLegend({ payload, hoveredSegment, onSegmentHover, onSegmentLeav
             <motion.div
               className="h-3 w-3 rounded-full"
               style={{
-                background: `linear-gradient(135deg, ${gradientColors?.start}, ${gradientColors?.end})`,
-                boxShadow: isHovered ? `0 0 8px ${gradientColors?.glow}` : 'none'
+                background: entryColor,
+                boxShadow: isHovered ? `0 0 8px ${entryColor}50` : 'none'
               }}
               animate={{
                 scale: isHovered ? 1.2 : 1,
-                boxShadow: isHovered ? `0 0 12px ${gradientColors?.glow}` : '0 0 0px transparent'
+                boxShadow: isHovered ? `0 0 12px ${entryColor}50` : '0 0 0px transparent'
               }}
               transition={{ duration: prefersReducedMotion ? 0.01 : 0.2 }}
             />
