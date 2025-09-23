@@ -674,21 +674,30 @@ PREDICTION CONTEXT:
    */
   async generateSampleData(): Promise<void> {
     const clientIds = ['A', 'B', 'C', 'D', 'E'];
-    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setHours(0, 0, 0, 0); // Set to start of today
+    const startDate = new Date(endDate);
     startDate.setMonth(startDate.getMonth() - 6); // 6 months ago
 
+    console.log(`[ForecastService] Generating sample data from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+
     for (const clientId of clientIds) {
-      // Generate 6 months of weekly data (approximately 26 data points)
-      for (let week = 0; week < 26; week++) {
-        const date = new Date(startDate);
-        date.setDate(date.getDate() + (week * 7));
+      // Generate weekly data from start date to today
+      const currentDate = new Date(startDate);
+      let week = 0;
+      
+      while (currentDate <= endDate) {
+        const date = new Date(currentDate);
 
         // Generate realistic sentiment and churn data with some patterns
         const baselineChurn = clientId === 'A' ? 0.15 : clientId === 'B' ? 0.25 : 0.10;
         const baselineSentiment = clientId === 'A' ? 0.3 : clientId === 'B' ? -0.1 : 0.6;
         
+        // Calculate total weeks for normalization
+        const totalWeeks = Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+        
         // Add some seasonal and random variation
-        const seasonalFactor = Math.sin((week / 26) * 2 * Math.PI) * 0.1;
+        const seasonalFactor = Math.sin((week / totalWeeks) * 2 * Math.PI) * 0.1;
         const randomFactor = (Math.random() - 0.5) * 0.2;
         
         const sentimentScore = Math.max(-1, Math.min(1, baselineSentiment + seasonalFactor + randomFactor));
@@ -712,6 +721,10 @@ PREDICTION CONTEXT:
             console.error('Error inserting sample data:', error);
           }
         }
+        
+        // Move to next week
+        currentDate.setDate(currentDate.getDate() + 7);
+        week++;
       }
     }
     
