@@ -5,7 +5,6 @@ import MetricCard from "@/components/MetricCard";
 import SentimentChart from "@/components/SentimentChart";
 import AtRiskClients from "@/components/AtRiskClients";
 import ClientBenchmarking from "@/components/ClientBenchmarking";
-import ClientCard from "@/components/ClientCard";
 
 interface DashboardMetrics {
   totalClients: number;
@@ -29,17 +28,6 @@ interface BenchmarkData {
   supportScore: number;
 }
 
-interface ClientCardData {
-  clientId: string;
-  primaryContact: string;
-  healthScore: number;
-  riskFlag: string;
-  region: string;
-  industry: string;
-  conversationCount: number;
-  sentimentTrend: "up" | "down" | "neutral";
-}
-
 export default function Overview() {
   const [, setLocation] = useLocation();
 
@@ -61,11 +49,6 @@ export default function Overview() {
   // Fetch benchmarking data from API
   const { data: benchmarkingData, isLoading: benchmarkingLoading } = useQuery<BenchmarkData[]>({
     queryKey: ['/api/dashboard/benchmarking'],
-  });
-
-  // Fetch client cards data from API
-  const { data: clientCardsData, isLoading: clientCardsLoading } = useQuery<ClientCardData[]>({
-    queryKey: ['/api/dashboard/client-cards'],
   });
 
   // Fetch real-time sentiment distribution from API
@@ -173,60 +156,11 @@ export default function Overview() {
         </motion.div>
       </motion.div>
 
-      {/* Individual Client Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.7 }}
-        className="space-y-4"
-      >
-        <h2 className="text-2xl font-bold tracking-tight">Client Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {clientCardsLoading ? (
-            // Loading skeleton cards
-            Array.from({ length: 5 }).map((_, index) => (
-              <div
-                key={index}
-                className="animate-pulse"
-                data-testid={`client-card-skeleton-${index}`}
-              >
-                <div className="bg-muted rounded-lg p-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="h-5 w-20 bg-muted-foreground/30 rounded"></div>
-                      <div className="h-3 w-16 bg-muted-foreground/20 rounded mt-2"></div>
-                    </div>
-                    <div className="h-6 w-12 bg-muted-foreground/30 rounded-full"></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="h-3 w-full bg-muted-foreground/20 rounded"></div>
-                    <div className="h-3 w-full bg-muted-foreground/20 rounded"></div>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            clientCardsData?.map((client) => (
-              <ClientCard
-                key={client.clientId}
-                clientId={client.clientId}
-                primaryContact={client.primaryContact}
-                conversationCount={client.conversationCount}
-                riskFlag={client.riskFlag}
-                healthScore={client.healthScore}
-                sentimentTrend={client.sentimentTrend}
-                className="h-full"
-              />
-            ))
-          )}
-        </div>
-      </motion.div>
-
       {/* At-Risk Clients */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.8 }}
+        transition={{ duration: 0.5, delay: 0.7 }}
       >
         <AtRiskClients 
           clients={atRiskClientsData || []} 
