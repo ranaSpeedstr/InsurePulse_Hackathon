@@ -266,7 +266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Routes] Generating insights for client ${clientId}${forceRefresh ? ' (force refresh)' : ''}`);
       
       // Set a timeout for the entire request (30 seconds) with proper cleanup
-      let timeoutId: NodeJS.Timeout;
+      let timeoutId: NodeJS.Timeout | undefined;
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => reject(new Error('Request timeout - insights generation took too long')), 30000);
       });
@@ -276,10 +276,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       try {
         const insights = await Promise.race([insightsPromise, timeoutPromise]);
-        clearTimeout(timeoutId); // Clean up timeout on success
+        if (timeoutId) clearTimeout(timeoutId); // Clean up timeout on success
         res.json(insights);
       } catch (error) {
-        clearTimeout(timeoutId); // Clean up timeout on failure
+        if (timeoutId) clearTimeout(timeoutId); // Clean up timeout on failure
         throw error;
       }
     } catch (error) {
@@ -308,6 +308,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
           clientId
         });
       }
+    }
+  });
+
+  // Client cards endpoint with conversation counts
+  app.get('/api/dashboard/client-cards', async (req, res) => {
+    try {
+      const clientData = await db
+        .select({
+          client_id: clients.client_id,
+          primary_contact: clients.primary_contact,
+          health_score: clients.health_score,
+          risk_flag: clients.risk_flag,
+          region: clients.region,
+          industry: clients.industry
+        })
+        .from(clients);
+
+      // Get conversation counts for each client
+      const clientCards = await Promise.all(
+        clientData.map(async (client) => {
+          // Count conversations from database
+          const conversationCount = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(conversations)
+            .where(eq(conversations.client_id, client.client_id));
+
+          // Get recent sentiment trend for the client
+          const recentSentiments = await db
+            .select({
+              sentiment_label: sentiment_analysis.sentiment_label,
+              created_at: sentiment_analysis.created_at
+            })
+            .from(sentiment_analysis)
+            .innerJoin(conversations, eq(conversations.id, sentiment_analysis.content_id))
+            .where(
+              and(
+                eq(conversations.client_id, client.client_id),
+                eq(sentiment_analysis.content_type, "conversation")
+              )
+            )
+            .orderBy(desc(sentiment_analysis.created_at))
+            .limit(5);
+
+          // Determine sentiment trend
+          let sentimentTrend: "up" | "down" | "neutral" = "neutral";
+          if (recentSentiments.length > 2) {
+            const recent = recentSentiments.slice(0, 2);
+            const older = recentSentiments.slice(2);
+            
+            const recentPositive = recent.filter(s => s.sentiment_label === 'positive').length;
+            const olderPositive = older.filter(s => s.sentiment_label === 'positive').length;
+            
+            if (recentPositive > olderPositive) {
+              sentimentTrend = "up";
+            } else if (recentPositive < olderPositive) {
+              sentimentTrend = "down";
+            }
+          }
+
+          return {
+            clientId: client.client_id,
+            primaryContact: client.primary_contact,
+            healthScore: client.health_score,
+            riskFlag: client.risk_flag,
+            region: client.region,
+            industry: client.industry,
+            conversationCount: conversationCount[0]?.count || 0,
+            sentimentTrend
+          };
+        })
+      );
+
+      res.json(clientCards);
+    } catch (error) {
+      console.error('[Routes] Error fetching client cards:', error);
+      res.status(500).json({ error: 'Failed to fetch client cards' });
     }
   });
 
