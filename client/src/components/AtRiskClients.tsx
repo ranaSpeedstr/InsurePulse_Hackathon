@@ -92,7 +92,10 @@ export default function AtRiskClients({ clients, isLoading = false, onClientActi
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => onClientAction?.(client.id, 'view')}
+                    onClick={() => {
+                      console.log('AtRiskClients - Button clicked for client:', client.id);
+                      onClientAction?.(client.id, 'view');
+                    }}
                     data-testid={`action-${client.id}`}
                     className="flex items-center gap-1"
                   >
