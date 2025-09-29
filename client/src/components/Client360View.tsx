@@ -2,10 +2,42 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { SkeletonCard, SkeletonTable, SkeletonContainer, SkeletonMetrics, SkeletonPage } from "@/components/ui/skeletons";
-import { User, Building, DollarSign, TrendingUp, MessageSquare, AlertTriangle, Users, Wrench, Target, CheckCircle2, Database, FileSpreadsheet, Mail, Phone, BarChart2, RefreshCw, Brain, Clock } from "lucide-react";
+import {
+  SkeletonCard,
+  SkeletonTable,
+  SkeletonContainer,
+  SkeletonMetrics,
+  SkeletonPage,
+} from "@/components/ui/skeletons";
+import {
+  User,
+  Building,
+  DollarSign,
+  TrendingUp,
+  MessageSquare,
+  AlertTriangle,
+  Users,
+  Wrench,
+  Target,
+  CheckCircle2,
+  Database,
+  FileSpreadsheet,
+  Mail,
+  Phone,
+  BarChart2,
+  RefreshCw,
+  Brain,
+  Clock,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import type { ClientInsights, AIInsightItem, ActionItem } from "@shared/schema";
@@ -77,15 +109,20 @@ const getRiskBadgeVariant = (risk: string) => {
   }
 };
 
-export default function Client360View({ profile, feedback, metrics, isLoading = false }: Client360ViewProps) {
+export default function Client360View({
+  profile,
+  feedback,
+  metrics,
+  isLoading = false,
+}: Client360ViewProps) {
   // Fetch AI insights for this client
-  const { 
-    data: insights, 
-    isLoading: insightsLoading, 
+  const {
+    data: insights,
+    isLoading: insightsLoading,
     error: insightsError,
-    refetch: refetchInsights
+    refetch: refetchInsights,
   } = useQuery<ClientInsights>({
-    queryKey: ['/api/clients', profile?.id, 'insights'],
+    queryKey: ["/api/clients", profile?.id, "insights"],
     enabled: !!profile?.id && !isLoading,
     staleTime: 5 * 60 * 1000, // 5 minutes - avoid excessive API calls
     refetchInterval: false, // Don't auto-refetch, only manual refresh
@@ -93,10 +130,13 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
 
   if (isLoading) {
     return (
-      <SkeletonContainer className="space-y-6" data-testid="client-360-view-loading">
+      <SkeletonContainer
+        className="space-y-6"
+        data-testid="client-360-view-loading"
+      >
         {/* Profile Header Skeleton */}
         <SkeletonCard showHeader={false} contentHeight={32} />
-        
+
         {/* Tabs Skeleton */}
         <Card>
           <CardContent className="p-6">
@@ -113,11 +153,11 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-6" 
+      className="space-y-6"
       data-testid="client-360-view"
     >
       {/* Profile Header */}
@@ -129,8 +169,10 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                 <Building className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">{profile.name}</h2>
-                <p className="text-muted-foreground">{profile.primaryContact}</p>
+                <h2 className="text-2xl font-bold">{profile.id}</h2>
+                <p className="text-muted-foreground">
+                  {profile.primaryContact}
+                </p>
               </div>
             </CardTitle>
             <Badge variant={getRiskBadgeVariant(profile.riskFlag)}>
@@ -141,22 +183,32 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Region</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Region
+              </p>
               <p className="text-lg font-semibold">{profile.region}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Industry</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Industry
+              </p>
               <p className="text-lg font-semibold">{profile.industry}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Contract Status</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Contract Status
+              </p>
               <p className="text-lg font-semibold">{profile.contractStatus}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Health Score</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                Health Score
+              </p>
               <div className="flex items-center gap-2">
                 <Progress value={profile.healthScore * 10} className="w-16" />
-                <span className="text-lg font-semibold">{profile.healthScore}/10</span>
+                <span className="text-lg font-semibold">
+                  {profile.healthScore}/10
+                </span>
               </div>
             </div>
           </div>
@@ -170,15 +222,19 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
           <TabsTrigger value="feedback">Feedback Timeline</TabsTrigger>
           <TabsTrigger value="insights">AI Insights</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="metrics" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {metrics.map((metric, index) => (
               <Card key={index}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-muted-foreground">{metric.label}</p>
-                    <TrendingUp className={`w-4 h-4 ${metric.trend === 'up' ? 'text-chart-2' : metric.trend === 'down' ? 'text-chart-4' : 'text-muted-foreground'}`} />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {metric.label}
+                    </p>
+                    <TrendingUp
+                      className={`w-4 h-4 ${metric.trend === "up" ? "text-chart-2" : metric.trend === "down" ? "text-chart-4" : "text-muted-foreground"}`}
+                    />
                   </div>
                   <p className="text-2xl font-bold">{metric.value}</p>
                 </CardContent>
@@ -195,7 +251,10 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
             <CardContent>
               <div className="space-y-4">
                 {feedback.map((item) => (
-                  <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
+                  <div
+                    key={item.id}
+                    className="flex gap-4 p-4 border rounded-lg"
+                  >
                     <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
                       {item.type === "email" ? (
                         <MessageSquare className="w-5 h-5" />
@@ -206,14 +265,16 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-sm font-medium">{item.date}</span>
-                        <Badge variant={getSentimentBadge(item.sentiment) as any}>
+                        <Badge
+                          variant={getSentimentBadge(item.sentiment) as any}
+                        >
                           {item.sentiment}
                         </Badge>
-                        <Badge variant="outline">
-                          {item.type}
-                        </Badge>
+                        <Badge variant="outline">{item.type}</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{item.content}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.content}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -228,35 +289,42 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <Brain className="w-6 h-6" />
-                <h2 className="text-xl font-bold">AI-Powered Client Insights</h2>
+                <h2 className="text-xl font-bold">
+                  AI-Powered Client Insights
+                </h2>
               </div>
-              <Button 
-                onClick={() => refetchInsights()} 
+              <Button
+                onClick={() => refetchInsights()}
                 disabled={insightsLoading}
                 variant="secondary"
                 size="sm"
                 className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                 data-testid="button-refresh-insights"
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${insightsLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${insightsLoading ? "animate-spin" : ""}`}
+                />
                 Refresh
               </Button>
             </div>
             <p className="text-blue-100">
-              {insights ? 
-                `Generated comprehensive analysis with ${insights.confidenceScore}% confidence` :
-                "Loading comprehensive analysis of client data sources with actionable insights"
-              }
+              {insights
+                ? `Generated comprehensive analysis with ${insights.confidenceScore}% confidence`
+                : "Loading comprehensive analysis of client data sources with actionable insights"}
             </p>
             {insights && (
               <div className="flex items-center gap-4 mt-3 text-sm text-blue-100">
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
-                  <span>Generated: {new Date(insights.generatedAt).toLocaleString()}</span>
+                  <span>
+                    Generated: {new Date(insights.generatedAt).toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Database className="w-4 h-4" />
-                  <span>{insights.dataSourcesAnalyzed.length} data sources</span>
+                  <span>
+                    {insights.dataSourcesAnalyzed.length} data sources
+                  </span>
                 </div>
               </div>
             )}
@@ -273,14 +341,17 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
               <CardContent className="p-6">
                 <div className="flex items-center gap-3 text-destructive mb-3">
                   <AlertTriangle className="w-5 h-5" />
-                  <h3 className="font-semibold">Unable to Generate AI Insights</h3>
+                  <h3 className="font-semibold">
+                    Unable to Generate AI Insights
+                  </h3>
                 </div>
                 <p className="text-muted-foreground mb-3">
-                  {insightsError.message || 'Failed to fetch AI-powered insights. This could be due to API limitations or temporary service issues.'}
+                  {insightsError.message ||
+                    "Failed to fetch AI-powered insights. This could be due to API limitations or temporary service issues."}
                 </p>
-                <Button 
-                  onClick={() => refetchInsights()} 
-                  variant="outline" 
+                <Button
+                  onClick={() => refetchInsights()}
+                  variant="outline"
                   size="sm"
                   data-testid="button-retry-insights"
                 >
@@ -299,14 +370,20 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                       <Target className="w-5 h-5" />
                       Overall Health Assessment
                     </div>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    <Badge
+                      variant="secondary"
+                      className="bg-blue-100 text-blue-800"
+                    >
                       {insights.overallHealthScore}/100
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="mb-4">
-                    <Progress value={insights.overallHealthScore} className="w-full mb-2" />
+                    <Progress
+                      value={insights.overallHealthScore}
+                      className="w-full mb-2"
+                    />
                     <p className="text-sm text-muted-foreground">
                       {insights.healthAssessment}
                     </p>
@@ -314,7 +391,9 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                   {insights.trendAnalysis && (
                     <div className="p-3 bg-muted/50 rounded-lg">
                       <h4 className="font-medium mb-2">Trend Analysis</h4>
-                      <p className="text-sm text-muted-foreground">{insights.trendAnalysis}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {insights.trendAnalysis}
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -331,7 +410,10 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                 <CardContent className="p-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {insights.dataSourcesAnalyzed.map((source, index) => (
-                      <div key={index} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg"
+                      >
                         <CheckCircle2 className="w-4 h-4 text-green-600" />
                         <span className="text-sm font-medium">{source}</span>
                       </div>
@@ -352,11 +434,22 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                   <CardContent className="p-4">
                     <div className="space-y-3">
                       {insights.riskFactors.map((risk, index) => (
-                        <div key={index} className="p-3 border rounded-lg hover:bg-muted/50">
+                        <div
+                          key={index}
+                          className="p-3 border rounded-lg hover:bg-muted/50"
+                        >
                           <div className="flex items-start justify-between mb-2">
                             <h4 className="font-medium">{risk.title}</h4>
                             <div className="flex gap-2">
-                              <Badge variant={risk.severity === 'Critical' ? 'destructive' : risk.severity === 'High' ? 'destructive' : 'secondary'}>
+                              <Badge
+                                variant={
+                                  risk.severity === "Critical"
+                                    ? "destructive"
+                                    : risk.severity === "High"
+                                      ? "destructive"
+                                      : "secondary"
+                                }
+                              >
                                 {risk.severity}
                               </Badge>
                               <Badge variant="outline">
@@ -364,7 +457,9 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                               </Badge>
                             </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">{risk.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {risk.description}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -384,11 +479,19 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                   <CardContent className="p-4">
                     <div className="space-y-3">
                       {insights.opportunities.map((opportunity, index) => (
-                        <div key={index} className="p-3 border rounded-lg hover:bg-muted/50">
+                        <div
+                          key={index}
+                          className="p-3 border rounded-lg hover:bg-muted/50"
+                        >
                           <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-medium text-green-800 dark:text-green-200">{opportunity.title}</h4>
+                            <h4 className="font-medium text-green-800 dark:text-green-200">
+                              {opportunity.title}
+                            </h4>
                             <div className="flex gap-2">
-                              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                              <Badge
+                                variant="secondary"
+                                className="bg-green-100 text-green-800"
+                              >
                                 {opportunity.severity} Impact
                               </Badge>
                               <Badge variant="outline">
@@ -396,7 +499,9 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                               </Badge>
                             </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">{opportunity.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {opportunity.description}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -429,22 +534,41 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                           <TableRow key={index} className="hover:bg-muted/50">
                             <TableCell>
                               <div>
-                                <div className="font-medium">{action.title}</div>
-                                <div className="text-sm text-muted-foreground">{action.description}</div>
+                                <div className="font-medium">
+                                  {action.title}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {action.description}
+                                </div>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Badge variant={action.priority === 'Urgent' ? 'destructive' : action.priority === 'High' ? 'default' : 'secondary'}>
+                              <Badge
+                                variant={
+                                  action.priority === "Urgent"
+                                    ? "destructive"
+                                    : action.priority === "High"
+                                      ? "default"
+                                      : "secondary"
+                                }
+                              >
                                 {action.priority}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 text-blue-800 border-blue-200"
+                              >
                                 {action.assignee}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-sm">{action.timeline}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{action.expectedImpact}</TableCell>
+                            <TableCell className="text-sm">
+                              {action.timeline}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {action.expectedImpact}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -458,7 +582,10 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="w-4 h-4" />
-                    <span>Next insights review recommended: {new Date(insights.nextReviewDate).toLocaleDateString()}</span>
+                    <span>
+                      Next insights review recommended:{" "}
+                      {new Date(insights.nextReviewDate).toLocaleDateString()}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -468,8 +595,13 @@ export default function Client360View({ profile, feedback, metrics, isLoading = 
               <CardContent className="p-6 text-center">
                 <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                 <h3 className="font-semibold mb-2">No insights available</h3>
-                <p className="text-muted-foreground mb-3">Click refresh to generate AI-powered insights for this client.</p>
-                <Button onClick={() => refetchInsights()} data-testid="button-generate-insights">
+                <p className="text-muted-foreground mb-3">
+                  Click refresh to generate AI-powered insights for this client.
+                </p>
+                <Button
+                  onClick={() => refetchInsights()}
+                  data-testid="button-generate-insights"
+                >
                   <Brain className="w-4 h-4 mr-2" />
                   Generate Insights
                 </Button>
