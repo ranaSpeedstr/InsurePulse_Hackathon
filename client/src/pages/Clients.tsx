@@ -42,14 +42,20 @@ export default function Clients() {
     const params = new URLSearchParams(location.split('?')[1] || '');
     const selectedFromUrl = params.get('selected');
     
-    if (selectedFromUrl) {
-      // URL parameter takes priority
+    console.log('Clients page - URL location:', location);
+    console.log('Clients page - URL params:', selectedFromUrl);
+    console.log('Clients page - Available clients:', clients.map(c => c.id));
+    
+    if (selectedFromUrl && clients.find(c => c.id === selectedFromUrl)) {
+      // URL parameter takes priority and client exists
+      console.log('Setting client from URL:', selectedFromUrl);
       setSelectedClient(selectedFromUrl);
     } else if (clients.length > 0 && !selectedClient) {
       // Only set default if no client is selected and no URL parameter
+      console.log('Setting default client:', clients[0].id);
       setSelectedClient(clients[0].id);
     }
-  }, [clients, location]);
+  }, [clients, location, selectedClient]);
 
   // Transform metrics data to match component expectations
   const transformMetricsData = (rawMetrics: any) => {
