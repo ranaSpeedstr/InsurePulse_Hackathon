@@ -38,26 +38,26 @@ interface SentimentChartProps {
 }
 
 const COLORS = {
-  Positive: "hsl(var(--chart-2))",
-  Neutral: "hsl(var(--chart-3))",
-  Negative: "hsl(var(--chart-4))",
+  Positive: "#22c55e", // Green for positive sentiment
+  Neutral: "#a3a3a3",  // Gray for neutral sentiment
+  Negative: "#ef4444", // Red for negative sentiment
 };
 
 const GRADIENT_COLORS = {
   Positive: {
-    start: "hsl(var(--chart-gradient-2-start))",
-    end: "hsl(var(--chart-gradient-2-end))",
-    glow: "hsl(var(--chart-glow-2) / 0.3)"
+    start: "#16a34a", // Dark green for positive sentiment
+    end: "#22c55e",   // Light green for positive sentiment
+    glow: "#22c55e80" // Green glow with opacity
   },
   Neutral: {
-    start: "hsl(var(--chart-gradient-3-start))",
-    end: "hsl(var(--chart-gradient-3-end))",
-    glow: "hsl(var(--chart-glow-3) / 0.3)"
+    start: "#737373", // Dark gray for neutral sentiment
+    end: "#a3a3a3",   // Light gray for neutral sentiment
+    glow: "#a3a3a380" // Gray glow with opacity
   },
   Negative: {
-    start: "hsl(var(--chart-gradient-4-start))",
-    end: "hsl(var(--chart-gradient-4-end))",
-    glow: "hsl(var(--chart-glow-4) / 0.3)"
+    start: "#dc2626", // Dark red for negative sentiment
+    end: "#ef4444",   // Light red for negative sentiment
+    glow: "#ef444480" // Red glow with opacity
   }
 };
 
