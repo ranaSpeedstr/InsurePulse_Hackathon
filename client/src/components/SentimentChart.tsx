@@ -98,8 +98,8 @@ function SentimentChartSkeleton() {
 
 // Custom Cell component with hover effects
 function AnimatedCell({ fill, name, isActive, onHover, onLeave, instanceId, prefersReducedMotion, ...props }: any) {
-  // Use the fill color directly from the API response
-  const baseColor = fill;
+  // Override colors for sentiment-based coloring
+  const baseColor = name === 'Positive' ? '#22c55e' : name === 'Negative' ? '#ef4444' : fill;
   
   return (
     <g>
