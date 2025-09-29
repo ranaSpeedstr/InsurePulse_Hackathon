@@ -194,23 +194,6 @@ export default function Client360View({
               </p>
               <p className="text-lg font-semibold">{profile.industry}</p>
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Contract Status
-              </p>
-              <p className="text-lg font-semibold">{profile.contractStatus}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Health Score
-              </p>
-              <div className="flex items-center gap-2">
-                <Progress value={profile.healthScore * 10} className="w-16" />
-                <span className="text-lg font-semibold">
-                  {profile.healthScore}/10
-                </span>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>

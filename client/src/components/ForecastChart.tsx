@@ -290,6 +290,12 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                     axisLine={{ stroke: "hsl(var(--border))" }}
                     tickLine={{ stroke: "hsl(var(--border))" }}
                     domain={type === "churn" ? [0, 20] : [0, 100]}
+                    label={{ 
+                      value: type === "churn" ? "Probability (%)" : "Sentiment Score (%)", 
+                      angle: -90, 
+                      position: "insideLeft",
+                      style: { textAnchor: "middle", fill: "hsl(var(--muted-foreground))", fontSize: "12px" }
+                    }}
                   />
                   
                   <Tooltip 

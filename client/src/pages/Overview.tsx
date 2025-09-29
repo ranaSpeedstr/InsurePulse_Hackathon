@@ -32,11 +32,8 @@ export default function Overview() {
   const [, setLocation] = useLocation();
 
   const handleClientAction = (clientId: string, action: "view") => {
-    console.log('Overview - handleClientAction called:', { clientId, action });
     if (action === "view") {
-      const newUrl = `/clients?selected=${clientId}`;
-      console.log('Overview - Navigating to:', newUrl);
-      setLocation(newUrl);
+      setLocation(`/clients?selected=${clientId}`);
     }
   };
   // Fetch dashboard metrics from API

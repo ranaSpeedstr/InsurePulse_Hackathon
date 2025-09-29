@@ -268,6 +268,12 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                     axisLine={{ stroke: "hsl(var(--border))" }}
                     tickLine={{ stroke: "hsl(var(--border))" }}
+                    label={{ 
+                      value: "Score", 
+                      angle: -90, 
+                      position: "insideLeft",
+                      style: { textAnchor: "middle", fill: "hsl(var(--muted-foreground))", fontSize: "12px" }
+                    }}
                   />
                   
                   <Tooltip 
