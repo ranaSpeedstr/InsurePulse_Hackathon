@@ -235,7 +235,7 @@ export default function ClientBenchmarking({ data, isLoading = false }: ClientBe
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={data} 
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
                   onMouseEnter={(data) => data?.activeLabel && handleClientHover(data.activeLabel)}
                   onMouseLeave={handleClientLeave}
                   role="img"

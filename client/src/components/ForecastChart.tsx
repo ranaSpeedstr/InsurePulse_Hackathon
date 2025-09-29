@@ -258,7 +258,7 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart 
                   data={data} 
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
                   role="img"
                   aria-label={`${title} showing ${data.length} data points over time`}
                 >
@@ -343,21 +343,21 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                       <Line 
                         type="monotone" 
                         dataKey="positive" 
-                        stroke={lineConfigs.positive.stroke}
+                        stroke={(lineConfigs as any).positive?.stroke || "#22c55e"}
                         strokeWidth={hoveredLine === "positive" ? 4 : 3}
                         name="Positive"
                         dot={{ 
-                          fill: lineConfigs.positive.stroke, 
+                          fill: (lineConfigs as any).positive?.stroke || "#22c55e", 
                           strokeWidth: 2, 
                           r: hoveredLine === "positive" ? 6 : 4,
-                          filter: hoveredLine === "positive" ? `drop-shadow(0 0 6px ${lineConfigs.positive.glow})` : undefined
+                          filter: hoveredLine === "positive" ? `drop-shadow(0 0 6px ${(lineConfigs as any).positive?.glow || "#22c55e80"})` : undefined
                         }}
                         activeDot={{ 
                           r: 6, 
-                          fill: lineConfigs.positive.stroke,
+                          fill: (lineConfigs as any).positive?.stroke || "#22c55e",
                           stroke: "hsl(var(--background))",
                           strokeWidth: 2,
-                          filter: `drop-shadow(0 0 8px ${lineConfigs.positive.glow})`
+                          filter: `drop-shadow(0 0 8px ${(lineConfigs as any).positive?.glow || "#22c55e80"})`
                         }}
                         animationBegin={prefersReducedMotion ? 0 : 0}
                         animationDuration={prefersReducedMotion ? 0 : 1500}
@@ -368,21 +368,21 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                       <Line 
                         type="monotone" 
                         dataKey="neutral" 
-                        stroke={lineConfigs.neutral.stroke}
+                        stroke={(lineConfigs as any).neutral?.stroke || "#a3a3a3"}
                         strokeWidth={hoveredLine === "neutral" ? 4 : 3}
                         name="Neutral"
                         dot={{ 
-                          fill: lineConfigs.neutral.stroke, 
+                          fill: (lineConfigs as any).neutral?.stroke || "#a3a3a3", 
                           strokeWidth: 2, 
                           r: hoveredLine === "neutral" ? 6 : 4,
-                          filter: hoveredLine === "neutral" ? `drop-shadow(0 0 6px ${lineConfigs.neutral.glow})` : undefined
+                          filter: hoveredLine === "neutral" ? `drop-shadow(0 0 6px ${(lineConfigs as any).neutral?.glow || "#a3a3a380"})` : undefined
                         }}
                         activeDot={{ 
                           r: 6, 
-                          fill: lineConfigs.neutral.stroke,
+                          fill: (lineConfigs as any).neutral?.stroke || "#a3a3a3",
                           stroke: "hsl(var(--background))",
                           strokeWidth: 2,
-                          filter: `drop-shadow(0 0 8px ${lineConfigs.neutral.glow})`
+                          filter: `drop-shadow(0 0 8px ${(lineConfigs as any).neutral?.glow || "#a3a3a380"})`
                         }}
                         animationBegin={200}
                         animationDuration={1500}
@@ -393,21 +393,21 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                       <Line 
                         type="monotone" 
                         dataKey="negative" 
-                        stroke={lineConfigs.negative.stroke}
+                        stroke={(lineConfigs as any).negative?.stroke || "#ef4444"}
                         strokeWidth={hoveredLine === "negative" ? 4 : 3}
                         name="Negative"
                         dot={{ 
-                          fill: lineConfigs.negative.stroke, 
+                          fill: (lineConfigs as any).negative?.stroke || "#ef4444", 
                           strokeWidth: 2, 
                           r: hoveredLine === "negative" ? 6 : 4,
-                          filter: hoveredLine === "negative" ? `drop-shadow(0 0 6px ${lineConfigs.negative.glow})` : undefined
+                          filter: hoveredLine === "negative" ? `drop-shadow(0 0 6px ${(lineConfigs as any).negative?.glow || "#ef444480"})` : undefined
                         }}
                         activeDot={{ 
                           r: 6, 
-                          fill: lineConfigs.negative.stroke,
+                          fill: (lineConfigs as any).negative?.stroke || "#ef4444",
                           stroke: "hsl(var(--background))",
                           strokeWidth: 2,
-                          filter: `drop-shadow(0 0 8px ${lineConfigs.negative.glow})`
+                          filter: `drop-shadow(0 0 8px ${(lineConfigs as any).negative?.glow || "#ef444480"})`
                         }}
                         animationBegin={400}
                         animationDuration={1500}
@@ -425,21 +425,21 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                       <Line 
                         type="monotone" 
                         dataKey="churnProbability" 
-                        stroke={lineConfigs.churnProbability.stroke}
+                        stroke={(lineConfigs as any).churnProbability?.stroke || "#ef4444"}
                         strokeWidth={hoveredLine === "churnProbability" ? 5 : 4}
                         name="Churn Probability"
                         dot={{ 
-                          fill: lineConfigs.churnProbability.stroke, 
+                          fill: (lineConfigs as any).churnProbability?.stroke || "#ef4444", 
                           strokeWidth: 2, 
                           r: hoveredLine === "churnProbability" ? 7 : 5,
-                          filter: hoveredLine === "churnProbability" ? `drop-shadow(0 0 8px ${lineConfigs.churnProbability.glow})` : undefined
+                          filter: hoveredLine === "churnProbability" ? `drop-shadow(0 0 8px ${(lineConfigs as any).churnProbability?.glow || "#ef444480"})` : undefined
                         }}
                         activeDot={{ 
                           r: 8, 
-                          fill: lineConfigs.churnProbability.stroke,
+                          fill: (lineConfigs as any).churnProbability?.stroke || "#ef4444",
                           stroke: "hsl(var(--background))",
                           strokeWidth: 3,
-                          filter: `drop-shadow(0 0 10px ${lineConfigs.churnProbability.glow})`
+                          filter: `drop-shadow(0 0 10px ${(lineConfigs as any).churnProbability?.glow || "#ef444480"})`
                         }}
                         animationBegin={prefersReducedMotion ? 0 : 0}
                         animationDuration={prefersReducedMotion ? 0 : 1500}
@@ -464,7 +464,7 @@ export default function ForecastChart({ data, type, isLoading = false }: Forecas
                 <div 
                   className="absolute inset-0"
                   style={{
-                    background: `radial-gradient(ellipse at center, ${lineConfigs[hoveredLine as keyof typeof lineConfigs]?.glow} 0%, transparent 70%)`,
+                    background: `radial-gradient(ellipse at center, ${(lineConfigs as any)[hoveredLine]?.glow || "#ef444480"} 0%, transparent 70%)`,
                     filter: "blur(20px)"
                   }}
                 />
