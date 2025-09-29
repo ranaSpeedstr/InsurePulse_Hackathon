@@ -179,12 +179,12 @@ function AnimatedLegend({ payload, hoveredSegment, onSegmentHover, onSegmentLeav
             <motion.div
               className="h-3 w-3 rounded-full"
               style={{
-                background: "#22c55e",
-                boxShadow: isHovered ? `0 0 8px #22c55e50` : 'none'
+                background: entry.value === 'Negative' ? '#ef4444' : entryColor,
+                boxShadow: isHovered ? `0 0 8px ${entry.value === 'Negative' ? '#ef4444' : entryColor}50` : 'none'
               }}
               animate={{
                 scale: isHovered ? 1.2 : 1,
-                boxShadow: isHovered ? `0 0 12px #22c55e50` : '0 0 0px transparent'
+                boxShadow: isHovered ? `0 0 12px ${entry.value === 'Negative' ? '#ef4444' : entryColor}50` : '0 0 0px transparent'
               }}
               transition={{ duration: prefersReducedMotion ? 0.01 : 0.2 }}
             />
