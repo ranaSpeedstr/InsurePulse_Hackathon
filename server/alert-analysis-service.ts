@@ -1,7 +1,14 @@
-import { OpenAI } from 'openai';
-import { db } from './db';
-import { clients, client_metrics, alerts, type Client, type ClientMetrics, type InsertAlert } from '@shared/schema';
-import { eq, sql, and } from 'drizzle-orm';
+import { OpenAI } from "openai";
+import { db } from "./db";
+import {
+  clients,
+  client_metrics,
+  alerts,
+  type Client,
+  type ClientMetrics,
+  type InsertAlert,
+} from "@shared/schema";
+import { eq, sql, and } from "drizzle-orm";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -14,7 +21,7 @@ interface ClientWithMetrics extends Client {
 interface AlertAnalysis {
   shouldAlert: boolean;
   triggerType: string;
-  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  severity: "Low" | "Medium" | "High" | "Critical";
   description: string;
   analysis: string;
   businessImpact: string;
@@ -27,7 +34,7 @@ export class AlertAnalysisService {
   private readonly minAnalysisInterval = 60000; // 1 minute minimum between analyses
 
   constructor() {
-    console.log('[AlertAnalysisService] Initialized alert analysis service');
+    console.log("[AlertAnalysisService] Initialized alert analysis service");
   }
 
   /**
@@ -36,29 +43,33 @@ export class AlertAnalysisService {
   async analyzeClientMetrics(): Promise<number> {
     // Prevent multiple simultaneous analyses
     if (this.isAnalyzing) {
-      console.log('[AlertAnalysisService] Analysis already in progress, skipping');
+      console.log(
+        "[AlertAnalysisService] Analysis already in progress, skipping",
+      );
       return 0;
     }
 
     // Rate limiting - don't analyze too frequently
     const now = Date.now();
     if (now - this.lastAnalysisTime < this.minAnalysisInterval) {
-      console.log('[AlertAnalysisService] Analysis rate limited, skipping');
+      console.log("[AlertAnalysisService] Analysis rate limited, skipping");
       return 0;
     }
 
     this.isAnalyzing = true;
     this.lastAnalysisTime = now;
-    
+
     try {
-      console.log('[AlertAnalysisService] Starting client metrics analysis...');
-      
+      console.log("[AlertAnalysisService] Starting client metrics analysis...");
+
       // Get all clients with their metrics
       const clientsWithMetrics = await this.getAllClientsWithMetrics();
-      console.log(`[AlertAnalysisService] Analyzing ${clientsWithMetrics.length} clients`);
-      
+      console.log(
+        `[AlertAnalysisService] Analyzing ${clientsWithMetrics.length} clients`,
+      );
+
       let alertsGenerated = 0;
-      
+
       // Analyze each client for concerning patterns
       for (const client of clientsWithMetrics) {
         try {
@@ -67,15 +78,22 @@ export class AlertAnalysisService {
             alertsGenerated++;
           }
         } catch (error) {
-          console.error(`[AlertAnalysisService] Error analyzing client ${client.client_id}:`, error);
+          console.error(
+            `[AlertAnalysisService] Error analyzing client ${client.client_id}:`,
+            error,
+          );
         }
       }
-      
-      console.log(`[AlertAnalysisService] Analysis complete. Generated ${alertsGenerated} new alerts`);
+
+      console.log(
+        `[AlertAnalysisService] Analysis complete. Generated ${alertsGenerated} new alerts`,
+      );
       return alertsGenerated;
-      
     } catch (error) {
-      console.error('[AlertAnalysisService] Error during metrics analysis:', error);
+      console.error(
+        "[AlertAnalysisService] Error during metrics analysis:",
+        error,
+      );
       throw error;
     } finally {
       this.isAnalyzing = false;
@@ -111,10 +129,13 @@ export class AlertAnalysisService {
         metrics_created_at: client_metrics.created_at,
       })
       .from(clients)
-      .leftJoin(client_metrics, eq(clients.client_id, client_metrics.client_id));
+      .leftJoin(
+        client_metrics,
+        eq(clients.client_id, client_metrics.client_id),
+      );
 
     // Transform the joined data into the expected structure
-    return result.map(row => ({
+    return result.map((row) => ({
       id: row.id,
       client_id: row.client_id,
       primary_contact: row.primary_contact,
@@ -126,27 +147,33 @@ export class AlertAnalysisService {
       risk_flag: row.risk_flag,
       client_email: row.client_email,
       created_at: row.created_at,
-      metrics: row.metrics_id ? {
-        id: row.metrics_id,
-        client_id: row.client_id,
-        avg_response_days: row.avg_response_days!,
-        avg_delivery_days: row.avg_delivery_days!,
-        escalations: row.escalations!,
-        delivered: row.delivered!,
-        backlog: row.backlog!,
-        support_score: row.support_score!,
-        created_at: row.metrics_created_at!,
-      } : null,
+      metrics: row.metrics_id
+        ? {
+            id: row.metrics_id,
+            client_id: row.client_id,
+            avg_response_days: row.avg_response_days!,
+            avg_delivery_days: row.avg_delivery_days!,
+            escalations: row.escalations!,
+            delivered: row.delivered!,
+            backlog: row.backlog!,
+            support_score: row.support_score!,
+            created_at: row.metrics_created_at!,
+          }
+        : null,
     }));
   }
 
   /**
    * Analyze a single client for concerning patterns and generate alerts if needed
    */
-  private async analyzeClientForAlerts(client: ClientWithMetrics): Promise<boolean> {
+  private async analyzeClientForAlerts(
+    client: ClientWithMetrics,
+  ): Promise<boolean> {
     // Skip if no metrics data available
     if (!client.metrics) {
-      console.log(`[AlertAnalysisService] No metrics data for client ${client.client_id}, skipping`);
+      console.log(
+        `[AlertAnalysisService] No metrics data for client ${client.client_id}, skipping`,
+      );
       return false;
     }
 
@@ -155,39 +182,53 @@ export class AlertAnalysisService {
     const recentAlertsCount = await db
       .select({ count: sql<number>`count(*)` })
       .from(alerts)
-      .where(and(
-        eq(alerts.client_id, client.client_id),
-        sql`detected_at > ${oneHourAgo}`
-      ));
+      .where(
+        and(
+          eq(alerts.client_id, client.client_id),
+          sql`detected_at > ${oneHourAgo}`,
+        ),
+      );
 
     // If client has 3+ alerts in the last hour, skip to prevent spam
     if (recentAlertsCount[0]?.count >= 3) {
-      console.log(`[AlertAnalysisService] Client ${client.client_id} has ${recentAlertsCount[0].count} recent alerts, rate limiting applied`);
+      console.log(
+        `[AlertAnalysisService] Client ${client.client_id} has ${recentAlertsCount[0].count} recent alerts, rate limiting applied`,
+      );
       return false;
     }
 
     try {
       // Use OpenAI to analyze the client data for concerning patterns
       const analysis = await this.analyzeWithOpenAI(client);
-      
+
       if (analysis.shouldAlert) {
         // Enhanced idempotency check: verify no duplicate alert for this client + trigger type combination
-        const isDuplicate = await this.checkForDuplicateAlert(client.client_id, analysis.triggerType);
-        
+        const isDuplicate = await this.checkForDuplicateAlert(
+          client.client_id,
+          analysis.triggerType,
+        );
+
         if (isDuplicate) {
-          console.log(`[AlertAnalysisService] Duplicate alert prevented for client ${client.client_id}, trigger: ${analysis.triggerType}`);
+          console.log(
+            `[AlertAnalysisService] Duplicate alert prevented for client ${client.client_id}, trigger: ${analysis.triggerType}`,
+          );
           return false;
         }
 
         // Generate the alert record
         await this.createAlert(client, analysis);
-        console.log(`[AlertAnalysisService] Generated ${analysis.severity} alert for client ${client.client_id}: ${analysis.triggerType}`);
+        console.log(
+          `[AlertAnalysisService] Generated ${analysis.severity} alert for client ${client.client_id}: ${analysis.triggerType}`,
+        );
         return true;
       }
-      
+
       return false;
     } catch (error) {
-      console.error(`[AlertAnalysisService] OpenAI analysis failed for client ${client.client_id}:`, error);
+      console.error(
+        `[AlertAnalysisService] OpenAI analysis failed for client ${client.client_id}:`,
+        error,
+      );
       return false;
     }
   }
@@ -195,17 +236,22 @@ export class AlertAnalysisService {
   /**
    * Check for duplicate alerts using client_id + trigger_type fingerprint within time window
    */
-  private async checkForDuplicateAlert(clientId: string, triggerType: string): Promise<boolean> {
+  private async checkForDuplicateAlert(
+    clientId: string,
+    triggerType: string,
+  ): Promise<boolean> {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    
+
     const duplicateAlerts = await db
       .select()
       .from(alerts)
-      .where(and(
-        eq(alerts.client_id, clientId),
-        eq(alerts.trigger_type, triggerType),
-        sql`detected_at > ${oneHourAgo}`
-      ))
+      .where(
+        and(
+          eq(alerts.client_id, clientId),
+          eq(alerts.trigger_type, triggerType),
+          sql`detected_at > ${oneHourAgo}`,
+        ),
+      )
       .limit(1);
 
     return duplicateAlerts.length > 0;
@@ -214,7 +260,9 @@ export class AlertAnalysisService {
   /**
    * Use OpenAI to analyze client data and determine if an alert should be generated
    */
-  private async analyzeWithOpenAI(client: ClientWithMetrics): Promise<AlertAnalysis> {
+  private async analyzeWithOpenAI(
+    client: ClientWithMetrics,
+  ): Promise<AlertAnalysis> {
     const prompt = `As an AI-powered Client Success Alert System, analyze this client's data to identify concerning patterns that require immediate attention. Focus on business-critical issues that could lead to churn, relationship deterioration, or revenue loss.
 
 CLIENT DATA FOR ANALYSIS:
@@ -278,38 +326,42 @@ IMPORTANT: Only set shouldAlert to true for genuinely concerning patterns that r
       messages: [
         {
           role: "system",
-          content: "You are an expert Customer Success AI that identifies critical client risk patterns requiring immediate attention. You are conservative and only generate alerts for genuine business-critical concerns."
+          content:
+            "You are an expert Customer Success AI that identifies critical client risk patterns requiring immediate attention. You are conservative and only generate alerts for genuine business-critical concerns.",
         },
         {
           role: "user",
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
       temperature: 0.1, // Low temperature for consistent, conservative analysis
       max_tokens: 1000,
     });
 
     try {
-      const result = JSON.parse(response.choices[0].message.content || '{}');
-      
+      const result = JSON.parse(response.choices[0].message.content || "{}");
+
       // Validate the response structure
-      if (typeof result.shouldAlert !== 'boolean') {
-        throw new Error('Invalid shouldAlert value');
+      if (typeof result.shouldAlert !== "boolean") {
+        throw new Error("Invalid shouldAlert value");
       }
-      
+
       return result as AlertAnalysis;
     } catch (parseError) {
-      console.error('[AlertAnalysisService] Error parsing OpenAI response:', parseError);
-      
+      console.error(
+        "[AlertAnalysisService] Error parsing OpenAI response:",
+        parseError,
+      );
+
       // Return safe default (no alert) if parsing fails
       return {
         shouldAlert: false,
-        triggerType: 'UNKNOWN',
-        severity: 'Low',
-        description: 'Analysis failed',
-        analysis: 'Unable to analyze client data due to parsing error',
-        businessImpact: 'Unknown',
-        recommendedActions: []
+        triggerType: "UNKNOWN",
+        severity: "Low",
+        description: "Analysis failed",
+        analysis: "Unable to analyze client data due to parsing error",
+        businessImpact: "Unknown",
+        recommendedActions: [],
       };
     }
   }
@@ -317,10 +369,13 @@ IMPORTANT: Only set shouldAlert to true for genuinely concerning patterns that r
   /**
    * Create an alert record in the database
    */
-  private async createAlert(client: ClientWithMetrics, analysis: AlertAnalysis): Promise<void> {
+  private async createAlert(
+    client: ClientWithMetrics,
+    analysis: AlertAnalysis,
+  ): Promise<void> {
     // Create CSV snapshot of current metrics for historical reference
     const csvSnapshot = this.createMetricsSnapshot(client);
-    
+
     const alertData: InsertAlert = {
       client_id: client.client_id,
       client_name: client.primary_contact,
@@ -328,7 +383,7 @@ IMPORTANT: Only set shouldAlert to true for genuinely concerning patterns that r
       trigger_type: analysis.triggerType,
       trigger_description: analysis.description,
       severity: analysis.severity,
-      status: 'Pending',
+      status: "Pending",
       openai_analysis: JSON.stringify({
         analysis: analysis.analysis,
         businessImpact: analysis.businessImpact,
@@ -336,7 +391,7 @@ IMPORTANT: Only set shouldAlert to true for genuinely concerning patterns that r
         generatedAt: new Date().toISOString(),
         clientHealthScore: client.health_score,
         riskFlag: client.risk_flag,
-        annualSpend: client.annual_spend_usd
+        annualSpend: client.annual_spend_usd,
       }),
       csv_data_snapshot: csvSnapshot,
     };
@@ -348,23 +403,23 @@ IMPORTANT: Only set shouldAlert to true for genuinely concerning patterns that r
    * Create a CSV-formatted snapshot of client metrics for historical reference
    */
   private createMetricsSnapshot(client: ClientWithMetrics): string {
-    if (!client.metrics) return '';
-    
+    if (!client.metrics) return "";
+
     const headers = [
-      'Client ID',
-      'Primary Contact',
-      'Health Score',
-      'Risk Flag',
-      'Annual Spend',
-      'Avg Response Days',
-      'Avg Delivery Days',
-      'Escalations',
-      'Delivered',
-      'Backlog',
-      'Support Score',
-      'Snapshot Date'
+      "Client ID",
+      "Primary Contact",
+      "Health Score",
+      "Risk Flag",
+      "Annual Spend",
+      "Avg Response Days",
+      "Avg Delivery Days",
+      "Escalations",
+      "Delivered",
+      "Backlog",
+      "Support Score",
+      "Snapshot Date",
     ];
-    
+
     const values = [
       client.client_id,
       client.primary_contact,
@@ -377,10 +432,10 @@ IMPORTANT: Only set shouldAlert to true for genuinely concerning patterns that r
       client.metrics.delivered.toString(),
       client.metrics.backlog.toString(),
       client.metrics.support_score.toString(),
-      new Date().toISOString()
+      new Date().toISOString(),
     ];
-    
-    return headers.join(',') + '\n' + values.join(',');
+
+    return headers.join(",") + "\n" + values.join(",");
   }
 
   /**
@@ -393,12 +448,23 @@ IMPORTANT: Only set shouldAlert to true for genuinely concerning patterns that r
     recentAlerts: number;
   }> {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    
-    const [totalResult] = await db.select({ count: sql<number>`count(*)` }).from(alerts);
-    const [pendingResult] = await db.select({ count: sql<number>`count(*)` }).from(alerts).where(eq(alerts.status, 'Pending'));
-    const [criticalResult] = await db.select({ count: sql<number>`count(*)` }).from(alerts).where(eq(alerts.severity, 'Critical'));
-    const [recentResult] = await db.select({ count: sql<number>`count(*)` }).from(alerts).where(sql`detected_at > ${oneDayAgo}`);
-    
+
+    const [totalResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(alerts);
+    const [pendingResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(alerts)
+      .where(eq(alerts.status, "Pending"));
+    const [criticalResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(alerts)
+      .where(eq(alerts.severity, "Critical"));
+    const [recentResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(alerts)
+      .where(sql`detected_at > ${oneDayAgo}`);
+
     return {
       totalAlerts: totalResult?.count || 0,
       pendingAlerts: pendingResult?.count || 0,

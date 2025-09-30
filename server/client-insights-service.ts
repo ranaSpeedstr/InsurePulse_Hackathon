@@ -1,17 +1,21 @@
-import OpenAI from 'openai';
-import { db } from './db';
-import { 
-  clients, 
-  client_metrics, 
-  client_retention, 
-  sentiment_analysis, 
-  alerts, 
+import OpenAI from "openai";
+import { db } from "./db";
+import {
+  clients,
+  client_metrics,
+  client_retention,
+  sentiment_analysis,
+  alerts,
   forecast_predictions,
   conversations,
-  emails 
-} from '../shared/schema';
-import { eq, desc, and } from 'drizzle-orm';
-import type { ClientInsights, AIInsightItem, ActionItem } from '../shared/schema';
+  emails,
+} from "../shared/schema";
+import { eq, desc, and } from "drizzle-orm";
+import type {
+  ClientInsights,
+  AIInsightItem,
+  ActionItem,
+} from "../shared/schema";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -29,11 +33,15 @@ class InsightsCache {
   private cache = new Map<string, CacheEntry>();
   private readonly DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes
 
-  set(clientId: string, insights: ClientInsights, ttl = this.DEFAULT_TTL): void {
+  set(
+    clientId: string,
+    insights: ClientInsights,
+    ttl = this.DEFAULT_TTL,
+  ): void {
     this.cache.set(clientId, {
       insights,
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
   }
 
@@ -77,13 +85,14 @@ export interface ClientDataSnapshot {
 }
 
 export class ClientInsightsService {
-
   /**
    * Clear cached insights for a client (useful when client data is updated)
    */
   public clearCache(clientId?: string): void {
     insightsCache.clear(clientId);
-    console.log(`[ClientInsights] Cache cleared ${clientId ? `for client ${clientId}` : 'for all clients'}`);
+    console.log(
+      `[ClientInsights] Cache cleared ${clientId ? `for client ${clientId}` : "for all clients"}`,
+    );
   }
 
   /**
@@ -96,42 +105,54 @@ export class ClientInsightsService {
   /**
    * Generate comprehensive AI insights for a specific client
    */
-  public async generateClientInsights(clientId: string, forceRefresh = false): Promise<ClientInsights> {
+  public async generateClientInsights(
+    clientId: string,
+    forceRefresh = false,
+  ): Promise<ClientInsights> {
     try {
       // Check cache first unless force refresh is requested
       if (!forceRefresh) {
         const cachedInsights = insightsCache.get(clientId);
         if (cachedInsights) {
-          console.log(`[ClientInsights] Returning cached insights for client ${clientId}`);
+          console.log(
+            `[ClientInsights] Returning cached insights for client ${clientId}`,
+          );
           return cachedInsights;
         }
       }
 
       // Aggregate all available client data
       const clientData = await this.aggregateClientData(clientId);
-      
+
       if (!clientData.profile) {
         throw new Error(`Client ${clientId} not found`);
       }
 
       // Generate insights using OpenAI GPT-4
       const aiInsights = await this.analyzeWithOpenAI(clientId, clientData);
-      
+
       // Cache the results for future requests
       insightsCache.set(clientId, aiInsights);
-      console.log(`[ClientInsights] Cached insights for client ${clientId}, cache size: ${insightsCache.size()}`);
-      
+      console.log(
+        `[ClientInsights] Cached insights for client ${clientId}, cache size: ${insightsCache.size()}`,
+      );
+
       return aiInsights;
     } catch (error) {
-      console.error(`[ClientInsights] Error generating insights for client ${clientId}:`, error);
-      
+      console.error(
+        `[ClientInsights] Error generating insights for client ${clientId}:`,
+        error,
+      );
+
       // Check if we have cached insights as fallback during API failures
       const cachedInsights = insightsCache.get(clientId);
       if (cachedInsights) {
-        console.log(`[ClientInsights] Returning cached insights as fallback for client ${clientId}`);
+        console.log(
+          `[ClientInsights] Returning cached insights as fallback for client ${clientId}`,
+        );
         return cachedInsights;
       }
-      
+
       throw error;
     }
   }
@@ -139,7 +160,9 @@ export class ClientInsightsService {
   /**
    * Aggregate all available data for a client from multiple tables
    */
-  private async aggregateClientData(clientId: string): Promise<ClientDataSnapshot> {
+  private async aggregateClientData(
+    clientId: string,
+  ): Promise<ClientDataSnapshot> {
     try {
       // Get client profile
       const [clientProfile] = await db
@@ -207,10 +230,13 @@ export class ClientInsightsService {
         recentAlerts: recentAlerts,
         forecasts: recentForecasts,
         conversations: recentConversations,
-        recentEmails: recentEmails
+        recentEmails: recentEmails,
       };
     } catch (error) {
-      console.error(`[ClientInsights] Error aggregating data for client ${clientId}:`, error);
+      console.error(
+        `[ClientInsights] Error aggregating data for client ${clientId}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -218,7 +244,10 @@ export class ClientInsightsService {
   /**
    * Use OpenAI GPT-4 to analyze client data and generate actionable insights
    */
-  private async analyzeWithOpenAI(clientId: string, data: ClientDataSnapshot): Promise<ClientInsights> {
+  private async analyzeWithOpenAI(
+    clientId: string,
+    data: ClientDataSnapshot,
+  ): Promise<ClientInsights> {
     const prompt = `As a CSD (Customer Success Director) AI assistant, analyze this comprehensive client data and provide detailed, actionable insights for client relationship management and churn prevention.
 
 CLIENT DATA FOR ANALYSIS:
@@ -315,37 +344,38 @@ Ensure all insights are specific, actionable, and directly related to the client
 
     try {
       const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: "gpt-4",
         messages: [
           {
-            role: 'system',
-            content: `You are an expert Customer Success Director AI assistant specialized in analyzing client relationship data and providing actionable insights for churn prevention and relationship strengthening. Always respond with valid JSON only that matches the requested structure exactly.`
+            role: "system",
+            content: `You are an expert Customer Success Director AI assistant specialized in analyzing client relationship data and providing actionable insights for churn prevention and relationship strengthening. Always respond with valid JSON only that matches the requested structure exactly.`,
           },
           {
-            role: 'user',
-            content: prompt
-          }
+            role: "user",
+            content: prompt,
+          },
         ],
         temperature: 0.3,
-        max_tokens: 3000
+        max_tokens: 3000,
       });
 
       const insightsJson = response.choices[0].message.content;
       if (!insightsJson) {
-        throw new Error('No response from OpenAI');
+        throw new Error("No response from OpenAI");
       }
 
       const insights: ClientInsights = JSON.parse(insightsJson);
-      
+
       // Validate required fields
       this.validateInsights(insights);
-      
-      console.log(`[ClientInsights] Successfully generated insights for client ${clientId}`);
-      return insights;
 
+      console.log(
+        `[ClientInsights] Successfully generated insights for client ${clientId}`,
+      );
+      return insights;
     } catch (error) {
-      console.error('[ClientInsights] OpenAI analysis error:', error);
-      
+      console.error("[ClientInsights] OpenAI analysis error:", error);
+
       // Return fallback insights if OpenAI fails
       return this.generateFallbackInsights(clientId, data);
     }
@@ -355,40 +385,48 @@ Ensure all insights are specific, actionable, and directly related to the client
    * Validate that the insights object contains required fields
    */
   private validateInsights(insights: ClientInsights): void {
-    const required = ['clientId', 'generatedAt', 'overallHealthScore', 'healthAssessment'];
+    const required = [
+      "clientId",
+      "generatedAt",
+      "overallHealthScore",
+      "healthAssessment",
+    ];
     for (const field of required) {
       if (!insights[field as keyof ClientInsights]) {
         throw new Error(`Missing required field: ${field}`);
       }
     }
-    
+
     if (insights.overallHealthScore < 0 || insights.overallHealthScore > 100) {
-      throw new Error('Overall health score must be between 0 and 100');
+      throw new Error("Overall health score must be between 0 and 100");
     }
   }
 
   /**
    * Generate fallback insights when OpenAI is unavailable
    */
-  private generateFallbackInsights(clientId: string, data: ClientDataSnapshot): ClientInsights {
+  private generateFallbackInsights(
+    clientId: string,
+    data: ClientDataSnapshot,
+  ): ClientInsights {
     const profile = data.profile;
     const metrics = data.metrics;
     const retention = data.retention;
-    
+
     // Calculate basic health score from available data
     let healthScore = 50; // Start with neutral
-    
+
     if (profile) {
       healthScore += (profile.health_score - 5) * 10; // Normalize 0-10 to affect score
-      if (profile.risk_flag === 'Low') healthScore += 10;
-      if (profile.risk_flag === 'High') healthScore -= 20;
+      if (profile.risk_flag === "Low") healthScore += 10;
+      if (profile.risk_flag === "High") healthScore -= 20;
     }
-    
+
     if (retention) {
       healthScore += (retention.renewal_rate_percent - 80) / 2; // Bonus for >80% renewal
       healthScore -= retention.policy_lapse_count * 5; // Penalty for lapses
     }
-    
+
     healthScore = Math.max(0, Math.min(100, healthScore));
 
     const fallbackInsights: ClientInsights = {
@@ -399,35 +437,40 @@ Ensure all insights are specific, actionable, and directly related to the client
       riskFactors: [
         {
           title: "AI Analysis Unavailable",
-          description: "Advanced AI insights are temporarily unavailable. Basic analysis provided based on core metrics.",
+          description:
+            "Advanced AI insights are temporarily unavailable. Basic analysis provided based on core metrics.",
           severity: "Medium",
           category: "performance",
-          confidence: 60
-        }
+          confidence: 60,
+        },
       ],
       opportunities: [
         {
-          title: "Data Review Recommended", 
-          description: "Comprehensive analysis should be performed when AI services are restored.",
+          title: "Data Review Recommended",
+          description:
+            "Comprehensive analysis should be performed when AI services are restored.",
           severity: "Low",
-          category: "opportunity", 
-          confidence: 70
-        }
+          category: "opportunity",
+          confidence: 70,
+        },
       ],
       actionItems: [
         {
           title: "Schedule Client Review",
-          description: "Manually review client data and consider reaching out to assess current satisfaction levels.",
+          description:
+            "Manually review client data and consider reaching out to assess current satisfaction levels.",
           priority: "Medium",
           assignee: "Account Manager",
           timeline: "Within 7 days",
-          expectedImpact: "Maintain relationship visibility during system limitations"
-        }
+          expectedImpact:
+            "Maintain relationship visibility during system limitations",
+        },
       ],
-      trendAnalysis: "Trend analysis requires AI processing which is currently unavailable. Manual review recommended.",
+      trendAnalysis:
+        "Trend analysis requires AI processing which is currently unavailable. Manual review recommended.",
       dataSourcesAnalyzed: ["Client Profile", "Basic Metrics"],
       confidenceScore: 60,
-      nextReviewDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+      nextReviewDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
     };
 
     return fallbackInsights;
